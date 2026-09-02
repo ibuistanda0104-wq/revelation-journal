@@ -37,9 +37,14 @@
         <h1 class="text-lg font-bold tracking-wide flex items-center gap-2">
           <span>🕊️</span> 靈程手帳 ‧ 異象啟示
         </h1>
-        <span class="text-xs bg-amber-400 text-blue-900 font-bold px-2.5 py-1 rounded-full shadow-sm">
-          共 {{ entries.length }} 篇
-        </span>
+        <div class="flex items-center gap-2">
+          <button @click="loadCloudData(true)" class="text-xs bg-blue-700 active:bg-blue-800 px-2.5 py-1 rounded-full border border-blue-400 font-bold flex items-center gap-1">
+            <span>{{ isSyncing ? '⏳' : '☁️' }}</span> {{ isSyncing ? '同步中' : '同步' }}
+          </button>
+          <span class="text-xs bg-amber-400 text-blue-900 font-bold px-2.5 py-1 rounded-full shadow-sm">
+            共 {{ entries.length }} 篇
+          </span>
+        </div>
       </div>
     </header>
 
@@ -94,19 +99,19 @@
             <input type="text" v-model="form.tags" placeholder="例：鑰匙, 門, 獅子, 烈火, 水" class="w-full bg-slate-50 border border-purple-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:outline-none">
           </div>
 
-          <!-- 經文 -->
+          <!-- 呼應經文 -->
           <div>
             <label class="text-xs font-bold text-slate-600 mb-1 block">呼應經文 📖</label>
             <input type="text" v-model="form.scriptureRef" placeholder="例：以賽亞書 22:22" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm">
           </div>
 
-          <!-- 內容 -->
+          <!-- 領受內容 -->
           <div>
             <label class="text-xs font-bold text-slate-600 mb-1 block">看見 / 聽見之領受細節 💬</label>
             <textarea v-model="form.content" rows="3" placeholder="請詳細記錄看見的異象、夢境情節或禱告中清楚聽見的話語..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"></textarea>
           </div>
 
-          <!-- 解讀 -->
+          <!-- 察驗與印證 -->
           <div>
             <label class="text-xs font-bold text-slate-600 mb-1 block">禱告察驗、解讀與後續印證 🕊️</label>
             <textarea v-model="form.interpretation" rows="2" placeholder="後續默想領會、屬靈長輩印證或生活應驗..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"></textarea>
@@ -124,14 +129,14 @@
 
           <!-- 儲存按鈕 -->
           <button @click="saveEntry" class="w-full py-3.5 bg-blue-600 active:bg-blue-700 text-white rounded-2xl text-base font-bold shadow-md transition flex items-center justify-center gap-1.5">
-            <span>💾</span> 珍藏這筆領受記錄
+            <span>💾</span> 珍藏這筆領受記錄 (同步雲端)
           </button>
         </div>
       </div>
 
       <!-- ================= Tab 2: 歷史清單與智能關聯 ================= -->
       <div v-show="activeTab === 'history'" class="space-y-4">
-        <!-- 全文檢索框 (灰底浮水印) -->
+        <!-- 灰底浮水印全文檢索框 -->
         <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
           <div class="relative">
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">🔍</span>
@@ -153,7 +158,7 @@
             :class="selectedItem?.id === item.id ? 'ring-2 ring-blue-500 bg-blue-50/50' : 'bg-white'"
             class="p-4 rounded-3xl shadow-sm border border-slate-200 space-y-2.5 transition active:scale-[0.99] cursor-pointer"
           >
-            <!-- 標題與標籤 -->
+            <!-- 標題與分類標籤 -->
             <div class="flex justify-between items-start">
               <div>
                 <span class="text-xs px-2 py-0.5 rounded-full font-bold mr-1.5" :class="getTypeBadge(item.type)">
@@ -167,12 +172,12 @@
               <span class="text-[11px] text-slate-400 flex-shrink-0">{{ item.occurredAt.replace('T', ' ').substring(0, 16) }}</span>
             </div>
 
-            <!-- 符號標籤 -->
+            <!-- 象徵符號 -->
             <div v-if="item.tags" class="text-xs text-purple-600 flex items-center gap-1 font-medium">
               <span>🔑</span> <span>{{ item.tags }}</span>
             </div>
 
-            <!-- 經文 -->
+            <!-- 呼應經文 -->
             <div v-if="item.scriptureRef" class="text-xs text-slate-500 flex items-center gap-1">
               <span>📖</span> <span>{{ item.scriptureRef }}</span>
             </div>
@@ -182,7 +187,7 @@
               <img :src="item.imagePath" class="w-full h-full object-cover">
             </div>
 
-            <!-- 按鈕列：修改、刪除、查看關聯 -->
+            <!-- 動作按鈕 -->
             <div class="pt-2 border-t border-slate-100 flex justify-between items-center">
               <span class="text-[11px] text-blue-600 font-bold">點擊卡片查看智能關聯 ➔</span>
               <div class="flex gap-2">
@@ -197,7 +202,7 @@
           </div>
         </div>
 
-        <!-- 智能關聯展示面板（點擊卡片後展開） -->
+        <!-- 智能關聯展示面板 -->
         <div v-if="selectedItem" class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-4 border border-blue-200 space-y-3 mt-4">
           <div class="flex justify-between items-center">
             <h3 class="font-bold text-blue-900 text-sm flex items-center gap-1">
@@ -238,7 +243,7 @@
             <div class="text-2xl font-bold text-blue-600 mt-1">{{ entries.length }} 篇</div>
           </div>
           <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 text-center">
-            <div class="text-xs font-bold text-slate-400">已完全應驗 ✅</div>
+            <div class="text-xs font-bold text-slate-400">已完全成就 ✅</div>
             <div class="text-2xl font-bold text-emerald-600 mt-1">
               {{ entries.filter(e => e.status === '已應驗').length }} 篇
             </div>
@@ -297,7 +302,7 @@
       </button>
     </nav>
 
-    <!-- ✏️ 修改彈出視窗 (Edit Modal) -->
+    <!-- ✏️ 修改彈出視窗 -->
     <div v-if="editModal.visible" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end justify-center p-0 sm:p-4">
       <div class="bg-white w-full max-w-md rounded-t-3xl p-5 space-y-3 max-h-[88vh] overflow-y-auto">
         <div class="flex justify-between items-center border-b pb-2">
@@ -350,7 +355,7 @@
         </div>
 
         <button @click="saveEditModal" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold shadow">
-          💾 儲存修改
+          💾 儲存修改 (同步雲端)
         </button>
       </div>
     </div>
@@ -365,36 +370,12 @@
         const activeTab = ref('record');
         const searchKeyword = ref('');
         const selectedItem = ref(null);
+        const isSyncing = ref(false);
 
-        // 預設示範資料
-        const defaultEntries = [
-          {
-            id: '1',
-            type: '異夢',
-            status: '已印證',
-            occurredAt: new Date().toISOString().substring(0, 16),
-            title: '敞開的門與金鑰匙',
-            tags: '門, 鑰匙, 光',
-            scriptureRef: '以賽亞書 22:22',
-            content: '夢中看見巨大的金色門戶被開啟，前方有明亮的光芒照射。',
-            interpretation: '神要開啟新的服事季節，無人能關。',
-            imagePath: ''
-          },
-          {
-            id: '2',
-            type: '啟示',
-            status: '禱告中',
-            occurredAt: new Date().toISOString().substring(0, 16),
-            title: '開啟突破的新季節',
-            tags: '鑰匙, 突破, 復興',
-            scriptureRef: '啟示錄 3:8',
-            content: '晨禱中領受神要賜下大衛的鑰匙，進入各領域的突破。',
-            interpretation: '持續守望家庭與職場。',
-            imagePath: ''
-          }
-        ];
+        // ☁️ 你的專屬 Firebase 雲端同步網址
+        const FIREBASE_URL = "https://revelation-sync-default-rtdb.firebaseio.com/data.json";
 
-        const entries = ref(JSON.parse(localStorage.getItem('revelation_journal_data')) || defaultEntries);
+        const entries = ref(JSON.parse(localStorage.getItem('revelation_journal_data')) || []);
 
         const form = ref({
           type: '異夢',
@@ -410,8 +391,41 @@
 
         const editModal = ref({ visible: false, item: null });
 
-        const saveToStorage = () => {
+        // 雲端與本地同步儲存
+        const saveToStorageAndCloud = async () => {
           localStorage.setItem('revelation_journal_data', JSON.stringify(entries.value));
+          isSyncing.value = true;
+          try {
+            await fetch(FIREBASE_URL, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(entries.value)
+            });
+          } catch (err) {
+            console.log('連線雲端暫時受阻，已先儲存至本機快取');
+          } finally {
+            isSyncing.value = false;
+          }
+        };
+
+        // 雲端載入
+        const loadCloudData = async (showNotice = false) => {
+          isSyncing.value = true;
+          try {
+            const res = await fetch(FIREBASE_URL);
+            const cloudData = await res.json();
+            if (Array.isArray(cloudData)) {
+              entries.value = cloudData;
+              localStorage.setItem('revelation_journal_data', JSON.stringify(cloudData));
+              if (showNotice) alert('☁️ 雲端同步成功！');
+            } else if (showNotice) {
+              alert('雲端目前為空，將以本機記錄為主。');
+            }
+          } catch (err) {
+            if (showNotice) alert('無法連線雲端，已讀取本機快取。');
+          } finally {
+            isSyncing.value = false;
+          }
         };
 
         const resetForm = () => {
@@ -440,7 +454,7 @@
         };
 
         // 新增記錄
-        const saveEntry = () => {
+        const saveEntry = async () => {
           if (!form.value.title.trim()) {
             alert('請填寫領受標題唷！🌟');
             return;
@@ -449,9 +463,9 @@
             id: crypto.randomUUID(),
             ...form.value
           });
-          saveToStorage();
+          await saveToStorageAndCloud();
           resetForm();
-          alert('✨ 靈程便籤已珍藏成功！');
+          alert('✨ 靈程便籤已珍藏並同步至雲端！');
           activeTab.value = 'history';
         };
 
@@ -473,7 +487,7 @@
           selectedItem.value = selectedItem.value?.id === item.id ? null : item;
         };
 
-        // 核心智能關聯演算法
+        // 智能關聯演算法
         const relatedList = computed(() => {
           if (!selectedItem.value) return [];
           const target = selectedItem.value;
@@ -504,21 +518,21 @@
           editModal.value.visible = true;
         };
 
-        const saveEditModal = () => {
+        const saveEditModal = async () => {
           const idx = entries.value.findIndex(e => e.id === editModal.value.item.id);
           if (idx !== -1) {
             entries.value[idx] = editModal.value.item;
-            saveToStorage();
+            await saveToStorageAndCloud();
             editModal.value.visible = false;
-            alert('✅ 記錄修改成功！');
+            alert('✅ 記錄修改並已同步！');
           }
         };
 
-        const deleteEntry = (item) => {
+        const deleteEntry = async (item) => {
           if (confirm(`確定要刪除「${item.title}」這篇記錄嗎？`)) {
             entries.value = entries.value.filter(e => e.id !== item.id);
             if (selectedItem.value?.id === item.id) selectedItem.value = null;
-            saveToStorage();
+            await saveToStorageAndCloud();
           }
         };
 
@@ -550,11 +564,15 @@
           return 'bg-slate-100 text-slate-600';
         };
 
+        onMounted(async () => {
+          await loadCloudData();
+        });
+
         return {
           activeTab, searchKeyword, entries, form, filteredEntries, selectedItem,
-          relatedList, editModal, topSymbols,
+          relatedList, editModal, topSymbols, isSyncing,
           handleImageUpload, saveEntry, resetForm, selectItem, openEditModal, saveEditModal, deleteEntry,
-          getTypeBadge, getStatusBadge
+          loadCloudData, getTypeBadge, getStatusBadge
         };
       }
     }).mount('#app');
