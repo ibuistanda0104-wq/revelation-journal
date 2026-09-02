@@ -33,7 +33,7 @@
           <span>🕊️</span> 靈程手帳 ‧ 異象啟示
         </h1>
         <div class="flex items-center gap-2">
-          <button onclick="syncCloud(true)" id="syncBtn" class="text-xs bg-blue-700 px-2.5 py-1 rounded-full border border-blue-400 font-bold">
+          <button onclick="syncCloud(true)" id="syncBtn" class="text-xs bg-blue-700 active:bg-blue-800 px-2.5 py-1 rounded-full border border-blue-400 font-bold">
             ☁️ 同步
           </button>
           <span id="totalBadge" class="text-xs bg-amber-400 text-blue-900 font-bold px-2.5 py-1 rounded-full shadow-sm">
@@ -53,13 +53,13 @@
             <h2 class="text-base font-bold text-blue-600 flex items-center gap-1.5">
               <span>✍️</span> 寫下靈程便籤
             </h2>
-            <button onclick="resetForm()" class="text-xs text-slate-400">↺ 清空</button>
+            <button onclick="resetForm()" class="text-xs text-slate-400 hover:text-slate-600">↺ 清空</button>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="text-xs font-bold text-blue-600 mb-1 block">領受分類 🏷️</label>
-              <select id="inpType" class="w-full bg-slate-50 border border-blue-200 rounded-xl px-2.5 py-2 text-sm font-semibold">
+              <select id="inpType" class="w-full bg-slate-50 border border-blue-200 rounded-xl px-2.5 py-2 text-sm font-semibold text-slate-700">
                 <option value="異夢">🌙 異夢 (Dream)</option>
                 <option value="異象">👁️ 異象 (Vision)</option>
                 <option value="啟示">💡 啟示 (Revelation)</option>
@@ -67,7 +67,7 @@
             </div>
             <div>
               <label class="text-xs font-bold text-emerald-600 mb-1 block">印證進度 🌱</label>
-              <select id="inpStatus" class="w-full bg-slate-50 border border-emerald-200 rounded-xl px-2.5 py-2 text-sm font-semibold">
+              <select id="inpStatus" class="w-full bg-slate-50 border border-emerald-200 rounded-xl px-2.5 py-2 text-sm font-semibold text-slate-700">
                 <option value="禱告中">⏳ 禱告察驗中</option>
                 <option value="已印證">🔍 已獲印證</option>
                 <option value="已應驗">✅ 已完全成就</option>
@@ -77,12 +77,12 @@
 
           <div>
             <label class="text-xs font-bold text-slate-600 mb-1 block">領受時間 📅</label>
-            <input type="datetime-local" id="inpDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm">
+            <input type="datetime-local" id="inpDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium">
           </div>
 
           <div>
             <label class="text-xs font-bold text-slate-600 mb-1 block">領受主題標題 ✏️</label>
-            <input type="text" id="inpTitle" placeholder="請輸入標題（例：金鑰匙與敞開的門）" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold">
+            <input type="text" id="inpTitle" placeholder="請輸入標題（例：金鑰匙與敞開的門）" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-800">
           </div>
 
           <div>
@@ -114,7 +114,7 @@
             </div>
           </div>
 
-          <button onclick="saveEntry()" class="w-full py-3.5 bg-blue-600 text-white rounded-2xl text-base font-bold shadow-md">
+          <button onclick="saveEntry()" class="w-full py-3.5 bg-blue-600 active:bg-blue-700 text-white rounded-2xl text-base font-bold shadow-md transition">
             💾 珍藏這筆領受記錄 (同步雲端)
           </button>
         </div>
@@ -260,7 +260,6 @@
         const res = await fetch(FIREBASE_URL);
         const data = await res.json();
         if (data) {
-          // 支援 Firebase 陣列或物件格式
           entries = Array.isArray(data) ? data : Object.values(data);
           localStorage.setItem('revelation_journal_data', JSON.stringify(entries));
           if (showAlert) alert('☁️ 雲端同步成功！');
@@ -398,4 +397,97 @@
       document.getElementById('modalContent').innerText = item.content || '（無內容描述）';
 
       const interpWrap = document.getElementById('modalInterpWrap');
-      if 
+      if (item.interpretation) {
+        document.getElementById('modalInterp').innerText = item.interpretation;
+        interpWrap.classList.remove('hidden');
+      } else {
+        interpWrap.classList.add('hidden');
+      }
+
+      // 智能關聯運算
+      const targetTags = (item.tags || '').split(/[,，\s、]+/).filter(Boolean).map(t => t.toLowerCase());
+      const relatedEl = document.getElementById('modalRelated');
+      let relHtml = '';
+      
+      entries.forEach(e => {
+        if (e.id == item.id) return;
+        const otherTags = (e.tags || '').split(/[,，\s、]+/).filter(Boolean).map(t => t.toLowerCase());
+        const common = targetTags.filter(t => otherTags.includes(t));
+        let score = common.length * 10;
+        if (item.scriptureRef && e.scriptureRef && item.scriptureRef.trim() === e.scriptureRef.trim()) score += 15;
+
+        if (score > 0) {
+          relHtml += `
+            <div onclick="openDetail('${e.id}')" class="bg-blue-50/70 p-3 rounded-2xl border border-blue-200 space-y-1 cursor-pointer">
+              <div class="flex justify-between items-center">
+                <span class="font-bold text-slate-800 text-xs">${e.title}</span>
+                <span class="text-[11px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">⭐ ${score} 分</span>
+              </div>
+              <div class="text-[11px] text-purple-600 font-medium">共同象徵：${common.join('、')}</div>
+            </div>`;
+        }
+      });
+
+      relatedEl.innerHTML = relHtml || `<div class="text-xs text-slate-400 bg-slate-50 p-4 rounded-2xl text-center border border-dashed border-slate-200">🌱 歷史中尚未找到具備相同符號或經文的記錄</div>`;
+      document.getElementById('detailModal').classList.remove('hidden');
+    }
+
+    async function deleteEntry(id) {
+      if (confirm('確定要刪除這篇記錄嗎？')) {
+        entries = entries.filter(e => e.id != id);
+        await saveStorageAndCloud();
+        renderHistory();
+        renderStats();
+      }
+    }
+
+    function renderStats() {
+      document.getElementById('statTotal').innerText = `${entries.length} 篇`;
+      document.getElementById('statFulfilled').innerText = `${entries.filter(e => e.status === '已應驗').length} 篇`;
+      document.getElementById('statDream').innerText = entries.filter(e => e.type === '異夢').length;
+      document.getElementById('statVision').innerText = entries.filter(e => e.type === '異象').length;
+      document.getElementById('statRev').innerText = entries.filter(e => e.type === '啟示').length;
+
+      const map = {};
+      entries.forEach(e => {
+        (e.tags || '').split(/[,，\s、]+/).filter(Boolean).forEach(t => {
+          const clean = t.trim();
+          map[clean] = (map[clean] || 0) + 1;
+        });
+      });
+
+      const sorted = Object.entries(map).map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count).slice(0, 8);
+      const symEl = document.getElementById('statSymbols');
+      
+      if (sorted.length === 0) {
+        symEl.innerHTML = `<div class="text-xs text-slate-400 text-center py-4">尚無足夠符號標籤可供統計</div>`;
+        return;
+      }
+
+      symEl.innerHTML = sorted.map((s, idx) => `
+        <div class="py-2 flex justify-between items-center text-xs">
+          <span class="font-bold text-slate-700 flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]">${idx + 1}</span>
+            【${s.tag}】
+          </span>
+          <span class="font-bold text-purple-600">${s.count} 次出現</span>
+        </div>
+      `).join('');
+    }
+
+    function getTypeBadgeClass(type) {
+      if (type === '異夢') return 'bg-blue-100 text-blue-700';
+      if (type === '異象') return 'bg-amber-100 text-amber-700';
+      return 'bg-purple-100 text-purple-700';
+    }
+
+    function getStatusBadgeClass(st) {
+      if (st === '已應驗') return 'bg-emerald-100 text-emerald-700';
+      if (st === '已印證') return 'bg-blue-100 text-blue-700';
+      return 'bg-slate-100 text-slate-600';
+    }
+
+    syncCloud();
+  </script>
+</body>
+</html>
