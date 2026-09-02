@@ -2,7 +2,6 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <!-- v=20260902.1 強制避免快取 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>靈程手帳 ‧ 異象啟示錄</title>
 
@@ -13,7 +12,6 @@
   <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3247/3247295.png">
 
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 
   <style>
     body {
@@ -25,8 +23,8 @@
     .border-doodle { border: 2px dashed #bae6fd; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased flex flex-col min-h-screen select-none">
-  <div id="app" class="flex-1 flex flex-col max-w-md mx-auto w-full bg-[#f8fbff] shadow-xl relative min-h-screen">
+<body class="bg-slate-50 text-slate-800 antialiased flex flex-col min-h-screen">
+  <div class="flex-1 flex flex-col max-w-md mx-auto w-full bg-[#f8fbff] shadow-xl relative min-h-screen">
 
     <!-- 頂部 Header -->
     <header class="bg-blue-600 text-white pt-safe pb-3.5 px-4 shadow-md sticky top-0 z-30">
@@ -35,33 +33,33 @@
           <span>🕊️</span> 靈程手帳 ‧ 異象啟示
         </h1>
         <div class="flex items-center gap-2">
-          <button @click="loadCloudData(true)" class="text-xs bg-blue-700 active:bg-blue-800 px-2.5 py-1 rounded-full border border-blue-400 font-bold flex items-center gap-1">
-            <span>{{ isSyncing ? '⏳' : '☁️' }}</span> {{ isSyncing ? '同步中' : '同步' }}
+          <button onclick="syncCloud(true)" id="syncBtn" class="text-xs bg-blue-700 px-2.5 py-1 rounded-full border border-blue-400 font-bold">
+            ☁️ 同步
           </button>
-          <span class="text-xs bg-amber-400 text-blue-900 font-bold px-2.5 py-1 rounded-full shadow-sm">
-            共 {{ entries.length }} 篇
+          <span id="totalBadge" class="text-xs bg-amber-400 text-blue-900 font-bold px-2.5 py-1 rounded-full shadow-sm">
+            共 0 篇
           </span>
         </div>
       </div>
     </header>
 
-    <!-- 主內容區 -->
+    <!-- 主內容滑動區 -->
     <main class="flex-1 overflow-y-auto px-4 py-4 pb-24 space-y-4">
 
       <!-- ================= Tab 1: 記錄領受 ================= -->
-      <div v-show="activeTab === 'record'" class="space-y-4">
+      <div id="tab-record" class="space-y-4">
         <div class="bg-white rounded-3xl p-4 shadow-sm border-doodle space-y-3.5">
           <div class="flex justify-between items-center border-b border-blue-50 pb-2">
             <h2 class="text-base font-bold text-blue-600 flex items-center gap-1.5">
               <span>✍️</span> 寫下靈程便籤
             </h2>
-            <button @click="resetForm" class="text-xs text-slate-400 hover:text-slate-600">↺ 清空</button>
+            <button onclick="resetForm()" class="text-xs text-slate-400">↺ 清空</button>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="text-xs font-bold text-blue-600 mb-1 block">領受分類 🏷️</label>
-              <select v-model="form.type" class="w-full bg-slate-50 border border-blue-200 rounded-xl px-2.5 py-2 text-sm font-semibold text-slate-700">
+              <select id="inpType" class="w-full bg-slate-50 border border-blue-200 rounded-xl px-2.5 py-2 text-sm font-semibold">
                 <option value="異夢">🌙 異夢 (Dream)</option>
                 <option value="異象">👁️ 異象 (Vision)</option>
                 <option value="啟示">💡 啟示 (Revelation)</option>
@@ -69,7 +67,7 @@
             </div>
             <div>
               <label class="text-xs font-bold text-emerald-600 mb-1 block">印證進度 🌱</label>
-              <select v-model="form.status" class="w-full bg-slate-50 border border-emerald-200 rounded-xl px-2.5 py-2 text-sm font-semibold text-slate-700">
+              <select id="inpStatus" class="w-full bg-slate-50 border border-emerald-200 rounded-xl px-2.5 py-2 text-sm font-semibold">
                 <option value="禱告中">⏳ 禱告察驗中</option>
                 <option value="已印證">🔍 已獲印證</option>
                 <option value="已應驗">✅ 已完全成就</option>
@@ -79,132 +77,73 @@
 
           <div>
             <label class="text-xs font-bold text-slate-600 mb-1 block">領受時間 📅</label>
-            <input type="datetime-local" v-model="form.occurredAt" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium">
+            <input type="datetime-local" id="inpDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm">
           </div>
 
           <div>
             <label class="text-xs font-bold text-slate-600 mb-1 block">領受主題標題 ✏️</label>
-            <input type="text" v-model="form.title" placeholder="請輸入標題（例：金鑰匙與敞開的門）" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-400 focus:outline-none">
+            <input type="text" id="inpTitle" placeholder="請輸入標題（例：金鑰匙與敞開的門）" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold">
           </div>
 
           <div>
             <label class="text-xs font-bold text-purple-600 mb-1 block">象徵符號 / 核心標籤 🔑 (以逗號隔開)</label>
-            <input type="text" v-model="form.tags" placeholder="例：鑰匙, 門, 獅子, 烈火, 水" class="w-full bg-slate-50 border border-purple-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:outline-none">
+            <input type="text" id="inpTags" placeholder="例：鑰匙, 門, 獅子, 烈火, 水" class="w-full bg-slate-50 border border-purple-200 rounded-xl px-3 py-2 text-sm">
           </div>
 
           <div>
             <label class="text-xs font-bold text-slate-600 mb-1 block">呼應經文 📖</label>
-            <input type="text" v-model="form.scriptureRef" placeholder="例：以賽亞書 22:22" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm">
+            <input type="text" id="inpScripture" placeholder="例：以賽亞書 22:22" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm">
           </div>
 
           <div>
             <label class="text-xs font-bold text-slate-600 mb-1 block">看見 / 聽見之領受細節 💬</label>
-            <textarea v-model="form.content" rows="3" placeholder="請詳細記錄看見的異象、夢境情節或禱告中清楚聽見的話語..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"></textarea>
+            <textarea id="inpContent" rows="3" placeholder="請詳細記錄看見的異象、夢境情節..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm"></textarea>
           </div>
 
           <div>
             <label class="text-xs font-bold text-slate-600 mb-1 block">禱告察驗、解讀與後續印證 🕊️</label>
-            <textarea v-model="form.interpretation" rows="2" placeholder="後續默想領會、屬靈長輩印證或生活應驗..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"></textarea>
+            <textarea id="inpInterp" rows="2" placeholder="後續默想領會、長輩印證或生活應驗..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm"></textarea>
           </div>
 
           <div>
-            <label class="text-xs font-bold text-blue-600 mb-1 block">📷 拍照 / 上傳異象草圖</label>
-            <input type="file" accept="image/*" @change="handleImageUpload" class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700">
-            <div v-if="form.imagePath" class="mt-2 relative rounded-2xl overflow-hidden border border-blue-200">
-              <img :src="form.imagePath" class="w-full h-44 object-cover">
-              <button @click="form.imagePath = ''" class="absolute top-2 right-2 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full">清除圖片</button>
+            <label class="text-xs font-bold text-blue-600 mb-1 block">📷 拍照 / 上傳草圖</label>
+            <input type="file" accept="image/*" id="inpImg" onchange="handleImage(this)" class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:bg-blue-100 file:text-blue-700">
+            <div id="imgPreviewContainer" class="mt-2 relative rounded-2xl overflow-hidden border border-blue-200 hidden">
+              <img id="imgPreview" class="w-full h-44 object-cover">
+              <button onclick="clearImg()" class="absolute top-2 right-2 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full">清除圖片</button>
             </div>
           </div>
 
-          <button @click="saveEntry" class="w-full py-3.5 bg-blue-600 active:bg-blue-700 text-white rounded-2xl text-base font-bold shadow-md transition flex items-center justify-center gap-1.5">
-            <span>💾</span> 珍藏這筆領受記錄 (同步雲端)
+          <button onclick="saveEntry()" class="w-full py-3.5 bg-blue-600 text-white rounded-2xl text-base font-bold shadow-md">
+            💾 珍藏這筆領受記錄 (同步雲端)
           </button>
         </div>
       </div>
 
       <!-- ================= Tab 2: 歷史清單 ================= -->
-      <div v-show="activeTab === 'history'" class="space-y-4">
-        <!-- 灰底浮水印全文檢索框 -->
+      <div id="tab-history" class="space-y-4 hidden">
         <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
           <div class="relative">
-            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">🔍</span>
-            <input type="text" v-model="searchKeyword" placeholder="搜尋關鍵字、經文、符號（例：鑰匙、門）" class="w-full pl-9 pr-8 py-2 bg-slate-100 border-none rounded-xl text-sm placeholder-slate-400 focus:ring-2 focus:ring-blue-400 focus:outline-none">
-            <button v-if="searchKeyword" @click="searchKeyword = ''" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 text-xs">✕</button>
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">🔍</span>
+            <input type="text" id="searchBox" oninput="renderHistory()" placeholder="搜尋關鍵字、經文、符號..." class="w-full pl-9 pr-8 py-2 bg-slate-100 border-none rounded-xl text-sm focus:outline-none">
           </div>
         </div>
 
-        <!-- 記錄卡片列表 -->
-        <div class="space-y-3">
-          <div v-if="filteredEntries.length === 0" class="bg-white rounded-3xl p-8 text-center text-slate-400 text-sm border-doodle">
-            尚無相符的靈程記錄 🍃
-          </div>
-
-          <div 
-            v-for="item in filteredEntries" 
-            :key="item.id"
-            class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 space-y-2.5 active:bg-blue-50/40 transition"
-          >
-            <!-- 點擊此整塊區域直接觸發閱讀內文與關聯 -->
-            <div @click="openDetailModal(item)" class="cursor-pointer space-y-2">
-              <div class="flex justify-between items-start">
-                <div>
-                  <span class="text-xs px-2 py-0.5 rounded-full font-bold mr-1.5" :class="getTypeBadge(item.type)">
-                    {{ item.type }}
-                  </span>
-                  <span class="text-xs px-2 py-0.5 rounded-full font-bold" :class="getStatusBadge(item.status)">
-                    {{ item.status }}
-                  </span>
-                  <h3 class="font-bold text-slate-800 text-base mt-1.5 leading-snug">{{ item.title }}</h3>
-                </div>
-                <span class="text-[11px] text-slate-400 flex-shrink-0 ml-2">{{ (item.occurredAt || '').replace('T', ' ').substring(0, 16) }}</span>
-              </div>
-
-              <!-- 象徵符號 -->
-              <div v-if="item.tags" class="text-xs text-purple-600 flex items-center gap-1 font-medium">
-                <span>🔑</span> <span>{{ item.tags }}</span>
-              </div>
-
-              <!-- 呼應經文 -->
-              <div v-if="item.scriptureRef" class="text-xs text-slate-500 flex items-center gap-1">
-                <span>📖</span> <span>{{ item.scriptureRef }}</span>
-              </div>
-
-              <!-- 照片縮圖 -->
-              <div v-if="item.imagePath" class="w-full h-32 rounded-xl overflow-hidden border border-slate-100 mt-1">
-                <img :src="item.imagePath" class="w-full h-full object-cover">
-              </div>
-
-              <div class="bg-blue-50/80 text-blue-700 py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-between mt-1">
-                <span>📖 點此閱讀完整夢境內文</span>
-                <span>🔗 探索關聯 ➔</span>
-              </div>
-            </div>
-
-            <!-- 修改與刪除獨立按鈕區（不阻擋卡片點擊） -->
-            <div class="pt-2 border-t border-slate-100 flex justify-end gap-2">
-              <button @click.stop="openEditModal(item)" class="text-xs bg-amber-50 active:bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1">
-                <span>✏️</span> 修改
-              </button>
-              <button @click.stop="deleteEntry(item)" class="text-xs bg-rose-50 active:bg-rose-100 text-rose-600 border border-rose-200 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1">
-                <span>🗑️</span> 刪除
-              </button>
-            </div>
-          </div>
+        <div id="historyList" class="space-y-3">
+          <!-- 動態載入卡片 -->
         </div>
       </div>
 
       <!-- ================= Tab 3: 統計看板 ================= -->
-      <div v-show="activeTab === 'stats'" class="space-y-4">
+      <div id="tab-stats" class="space-y-4 hidden">
         <div class="grid grid-cols-2 gap-2">
           <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 text-center">
             <div class="text-xs font-bold text-slate-400">總記錄篇數 📚</div>
-            <div class="text-2xl font-bold text-blue-600 mt-1">{{ entries.length }} 篇</div>
+            <div id="statTotal" class="text-2xl font-bold text-blue-600 mt-1">0 篇</div>
           </div>
           <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 text-center">
             <div class="text-xs font-bold text-slate-400">已完全成就 ✅</div>
-            <div class="text-2xl font-bold text-emerald-600 mt-1">
-              {{ entries.filter(e => e.status === '已應驗').length }} 篇
-            </div>
+            <div id="statFulfilled" class="text-2xl font-bold text-emerald-600 mt-1">0 篇</div>
           </div>
         </div>
 
@@ -212,33 +151,21 @@
           <h3 class="text-xs font-bold text-slate-500">📖 領受類型分佈</h3>
           <div class="grid grid-cols-3 gap-2 pt-1 text-center">
             <div class="bg-blue-50 p-2 rounded-xl text-blue-700 font-bold text-xs">
-              🌙 異夢<br><span class="text-base">{{ entries.filter(e => e.type === '異夢').length }}</span>
+              🌙 異夢<br><span id="statDream" class="text-base">0</span>
             </div>
             <div class="bg-amber-50 p-2 rounded-xl text-amber-700 font-bold text-xs">
-              👁️ 異象<br><span class="text-base">{{ entries.filter(e => e.type === '異象').length }}</span>
+              👁️ 異象<br><span id="statVision" class="text-base">0</span>
             </div>
             <div class="bg-purple-50 p-2 rounded-xl text-purple-700 font-bold text-xs">
-              💡 啟示<br><span class="text-base">{{ entries.filter(e => e.type === '啟示').length }}</span>
+              💡 啟示<br><span id="statRev" class="text-base">0</span>
             </div>
           </div>
         </div>
 
-        <!-- 高頻符號排行 Top 8 -->
         <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 space-y-3">
-          <h3 class="text-xs font-bold text-slate-500 flex items-center gap-1">
-            <span>🔑</span> 高頻象徵符號排行 (Top 8)
-          </h3>
-          <div v-if="topSymbols.length === 0" class="text-xs text-slate-400 text-center py-4">
-            尚無足夠符號標籤可供統計
-          </div>
-          <div v-else class="divide-y divide-slate-100">
-            <div v-for="(sym, idx) in topSymbols" :key="sym.tag" class="py-2 flex justify-between items-center text-xs">
-              <span class="font-bold text-slate-700 flex items-center gap-1.5">
-                <span class="w-4 h-4 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]">{{ idx + 1 }}</span>
-                【{{ sym.tag }}】
-              </span>
-              <span class="font-bold text-purple-600">{{ sym.count }} 次出現</span>
-            </div>
+          <h3 class="text-xs font-bold text-slate-500">🔑 高頻象徵符號排行 (Top 8)</h3>
+          <div id="statSymbols" class="divide-y divide-slate-100 text-xs">
+            <!-- 動態排行 -->
           </div>
         </div>
       </div>
@@ -246,125 +173,231 @@
 
     <!-- 底部導航欄 -->
     <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200 flex justify-around py-2 pb-safe z-30 shadow-lg">
-      <button @click="activeTab = 'record'" :class="activeTab === 'record' ? 'text-blue-600 font-bold' : 'text-slate-400'" class="flex flex-col items-center gap-0.5 flex-1">
-        <span class="text-lg">✍️</span>
-        <span class="text-[10px]">寫小便籤</span>
+      <button onclick="switchTab('record')" id="btnTabRecord" class="flex flex-col items-center gap-0.5 flex-1 text-blue-600 font-bold">
+        <span class="text-lg">✍️</span><span class="text-[10px]">寫小便籤</span>
       </button>
-      <button @click="activeTab = 'history'" :class="activeTab === 'history' ? 'text-blue-600 font-bold' : 'text-slate-400'" class="flex flex-col items-center gap-0.5 flex-1">
-        <span class="text-lg">🔍</span>
-        <span class="text-[10px]">清單與關聯</span>
+      <button onclick="switchTab('history')" id="btnTabHistory" class="flex flex-col items-center gap-0.5 flex-1 text-slate-400">
+        <span class="text-lg">🔍</span><span class="text-[10px]">清單與關聯</span>
       </button>
-      <button @click="activeTab = 'stats'" :class="activeTab === 'stats' ? 'text-blue-600 font-bold' : 'text-slate-400'" class="flex flex-col items-center gap-0.5 flex-1">
-        <span class="text-lg">📊</span>
-        <span class="text-[10px]">統計看板</span>
+      <button onclick="switchTab('stats')" id="btnTabStats" class="flex flex-col items-center gap-0.5 flex-1 text-slate-400">
+        <span class="text-lg">📊</span><span class="text-[10px]">統計看板</span>
       </button>
     </nav>
 
-    <!-- 📖 完整內文與智能關聯彈出卡片 (全螢幕最高層級 z-50) -->
-    <div 
-      v-if="detailModal.visible" 
-      class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end justify-center p-0"
-      @click.self="detailModal.visible = false"
-    >
-      <div class="bg-white w-full max-w-md rounded-t-3xl p-5 space-y-4 max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col">
-        
-        <!-- 標題列 -->
+    <!-- 📖 詳情與智能關聯互動彈窗 -->
+    <div id="detailModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end justify-center hidden" onclick="closeModal(event)">
+      <div class="bg-white w-full max-w-md rounded-t-3xl p-5 space-y-4 max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col" onclick="event.stopPropagation()">
         <div class="flex justify-between items-start border-b pb-3 flex-shrink-0">
-          <div class="pr-2">
-            <div class="flex gap-1.5 mb-1">
-              <span class="text-xs px-2 py-0.5 rounded-full font-bold" :class="getTypeBadge(detailModal.item.type)">
-                {{ detailModal.item.type }}
-              </span>
-              <span class="text-xs px-2 py-0.5 rounded-full font-bold" :class="getStatusBadge(detailModal.item.status)">
-                {{ detailModal.item.status }}
-              </span>
-            </div>
-            <h2 class="text-lg font-bold text-slate-900 leading-snug">{{ detailModal.item.title }}</h2>
-            <div class="text-[11px] text-slate-400 mt-1">📅 領受時間：{{ (detailModal.item.occurredAt || '').replace('T', ' ') }}</div>
+          <div>
+            <div id="modalBadges" class="flex gap-1.5 mb-1"></div>
+            <h2 id="modalTitle" class="text-lg font-bold text-slate-900 leading-snug"></h2>
+            <div id="modalDate" class="text-[11px] text-slate-400 mt-1"></div>
           </div>
-          <button @click="detailModal.visible = false" class="bg-slate-100 text-slate-500 hover:text-slate-800 rounded-full w-8 h-8 flex items-center justify-center font-bold text-base flex-shrink-0">✕</button>
+          <button onclick="document.getElementById('detailModal').classList.add('hidden')" class="bg-slate-100 text-slate-500 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
         </div>
 
-        <!-- 符號標籤與經文 -->
-        <div class="space-y-1.5 bg-blue-50/60 p-3 rounded-2xl text-xs border border-blue-100 flex-shrink-0">
-          <div v-if="detailModal.item.tags" class="text-purple-700 font-semibold flex items-center gap-1">
-            <span>🔑 象徵符號：</span><span>{{ detailModal.item.tags }}</span>
-          </div>
-          <div v-if="detailModal.item.scriptureRef" class="text-blue-700 font-semibold flex items-center gap-1">
-            <span>📖 呼應經文：</span><span>{{ detailModal.item.scriptureRef }}</span>
-          </div>
+        <div id="modalMeta" class="space-y-1.5 bg-blue-50/60 p-3 rounded-2xl text-xs border border-blue-100 flex-shrink-0"></div>
+        <div id="modalImgContainer" class="rounded-2xl overflow-hidden border border-slate-200 hidden">
+          <img id="modalImg" class="w-full max-h-60 object-contain bg-black/5">
         </div>
 
-        <!-- 圖片 -->
-        <div v-if="detailModal.item.imagePath" class="rounded-2xl overflow-hidden border border-slate-200 flex-shrink-0">
-          <img :src="detailModal.item.imagePath" class="w-full max-h-60 object-contain bg-black/5">
-        </div>
-
-        <!-- 完整夢境內容描述 -->
         <div class="space-y-1">
-          <h4 class="text-xs font-bold text-slate-500 flex items-center gap-1">💬 領受詳細內容（完整的夢）：</h4>
-          <div class="bg-slate-50 p-3.5 rounded-2xl text-sm text-slate-800 whitespace-pre-wrap leading-relaxed border border-slate-200">
-            {{ detailModal.item.content || '（無內容描述）' }}
-          </div>
+          <h4 class="text-xs font-bold text-slate-500">💬 領受詳細內容：</h4>
+          <div id="modalContent" class="bg-slate-50 p-3.5 rounded-2xl text-sm text-slate-800 whitespace-pre-wrap border border-slate-200"></div>
         </div>
 
-        <!-- 禱告解讀察驗 -->
-        <div v-if="detailModal.item.interpretation" class="space-y-1">
-          <h4 class="text-xs font-bold text-slate-500 flex items-center gap-1">🕊️ 禱告察驗與印證：</h4>
-          <div class="bg-amber-50/70 p-3.5 rounded-2xl text-sm text-amber-900 whitespace-pre-wrap leading-relaxed border border-amber-200">
-            {{ detailModal.item.interpretation }}
-          </div>
+        <div id="modalInterpWrap" class="space-y-1 hidden">
+          <h4 class="text-xs font-bold text-slate-500">🕊️ 禱告察驗與印證：</h4>
+          <div id="modalInterp" class="bg-amber-50/70 p-3.5 rounded-2xl text-sm text-amber-900 whitespace-pre-wrap border border-amber-200"></div>
         </div>
 
-        <!-- 🔗 智能關聯篇章 -->
         <div class="pt-3 border-t border-slate-200 space-y-2">
-          <h3 class="text-sm font-bold text-blue-900 flex items-center gap-1">
-            <span>🔗</span> 智能關聯串接 (共同符號/經文歷史)
-          </h3>
-
-          <div v-if="relatedList.length === 0" class="text-xs text-slate-400 bg-slate-50 p-4 rounded-2xl text-center border border-dashed border-slate-200">
-            🌱 歷史中尚未找到具備相同符號或經文的記錄
-          </div>
-
-          <div v-else class="space-y-2">
-            <div 
-              v-for="rel in relatedList" 
-              :key="rel.entry.id" 
-              @click="openDetailModal(rel.entry)"
-              class="bg-blue-50/70 active:bg-blue-100 p-3 rounded-2xl border border-blue-200 space-y-1 transition cursor-pointer"
-            >
-              <div class="flex justify-between items-center">
-                <span class="font-bold text-slate-800 text-xs flex-1 truncate mr-2">{{ rel.entry.title }}</span>
-                <span class="text-[11px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">
-                  ⭐ {{ rel.score }} 分
-                </span>
-              </div>
-              <div class="text-[11px] text-slate-400 flex justify-between">
-                <span>{{ rel.entry.type }} ｜ {{ (rel.entry.occurredAt || '').replace('T', ' ').substring(0, 10) }}</span>
-                <span class="text-emerald-600 font-medium">{{ rel.entry.status }}</span>
-              </div>
-              <div class="text-[11px] text-purple-600 font-medium">
-                共同象徵：{{ rel.commonTags.join('、') }}
-              </div>
-            </div>
-          </div>
+          <h3 class="text-sm font-bold text-blue-900">🔗 智能關聯串接 (共同符號/經文歷史)</h3>
+          <div id="modalRelated" class="space-y-2"></div>
         </div>
 
-        <button @click="detailModal.visible = false" class="w-full py-3 bg-slate-100 active:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm mt-2">
-          關閉
-        </button>
+        <button onclick="document.getElementById('detailModal').classList.add('hidden')" class="w-full py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm">關閉</button>
       </div>
     </div>
+  </div>
 
-    <!-- ✏️ 修改彈出視窗 -->
-    <div v-if="editModal.visible" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end justify-center p-0">
-      <div class="bg-white w-full max-w-md rounded-t-3xl p-5 space-y-3 max-h-[88vh] overflow-y-auto">
-        <div class="flex justify-between items-center border-b pb-2">
-          <h3 class="font-bold text-slate-800 text-base">✏️ 修改靈程記錄</h3>
-          <button @click="editModal.visible = false" class="text-slate-400 text-lg font-bold">✕</button>
+  <script>
+    const FIREBASE_URL = "https://revelation-sync-default-rtdb.firebaseio.com/data.json";
+    let entries = JSON.parse(localStorage.getItem('revelation_journal_data')) || [];
+    let currentImageBase64 = "";
+    let activeModalItemId = null;
+
+    document.getElementById('inpDate').value = new Date().toISOString().substring(0, 16);
+
+    function switchTab(tab) {
+      document.getElementById('tab-record').classList.toggle('hidden', tab !== 'record');
+      document.getElementById('tab-history').classList.toggle('hidden', tab !== 'history');
+      document.getElementById('tab-stats').classList.toggle('hidden', tab !== 'stats');
+
+      document.getElementById('btnTabRecord').className = `flex flex-col items-center gap-0.5 flex-1 ${tab === 'record' ? 'text-blue-600 font-bold' : 'text-slate-400'}`;
+      document.getElementById('btnTabHistory').className = `flex flex-col items-center gap-0.5 flex-1 ${tab === 'history' ? 'text-blue-600 font-bold' : 'text-slate-400'}`;
+      document.getElementById('btnTabStats').className = `flex flex-col items-center gap-0.5 flex-1 ${tab === 'stats' ? 'text-blue-600 font-bold' : 'text-slate-400'}`;
+
+      if (tab === 'history') renderHistory();
+      if (tab === 'stats') renderStats();
+    }
+
+    async function saveStorageAndCloud() {
+      localStorage.setItem('revelation_journal_data', JSON.stringify(entries));
+      document.getElementById('totalBadge').innerText = `共 ${entries.length} 篇`;
+      try {
+        await fetch(FIREBASE_URL, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(entries)
+        });
+      } catch (e) {}
+    }
+
+    async function syncCloud(showAlert = false) {
+      document.getElementById('syncBtn').innerText = '⏳ 同步中';
+      try {
+        const res = await fetch(FIREBASE_URL);
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          entries = data;
+          localStorage.setItem('revelation_journal_data', JSON.stringify(entries));
+          if (showAlert) alert('☁️ 雲端同步成功！');
+        }
+      } catch (e) {
+        if (showAlert) alert('無法連線雲端');
+      } finally {
+        document.getElementById('syncBtn').innerText = '☁️ 同步';
+        document.getElementById('totalBadge').innerText = `共 ${entries.length} 篇`;
+        renderHistory();
+        renderStats();
+      }
+    }
+
+    function handleImage(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        currentImageBase64 = e.target.result;
+        document.getElementById('imgPreview').src = currentImageBase64;
+        document.getElementById('imgPreviewContainer').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearImg() {
+      currentImageBase64 = "";
+      document.getElementById('inpImg').value = "";
+      document.getElementById('imgPreviewContainer').classList.add('hidden');
+    }
+
+    function resetForm() {
+      document.getElementById('inpTitle').value = "";
+      document.getElementById('inpTags').value = "";
+      document.getElementById('inpScripture').value = "";
+      document.getElementById('inpContent').value = "";
+      document.getElementById('inpInterp').value = "";
+      clearImg();
+    }
+
+    async function saveEntry() {
+      const title = document.getElementById('inpTitle').value.trim();
+      if (!title) {
+        alert('請填寫領受標題唷！🌟');
+        return;
+      }
+
+      const newItem = {
+        id: 'id_' + Math.random().toString(36.2),
+        type: document.getElementById('inpType').value,
+        status: document.getElementById('inpStatus').value,
+        occurredAt: document.getElementById('inpDate').value,
+        title: title,
+        tags: document.getElementById('inpTags').value.trim(),
+        scriptureRef: document.getElementById('inpScripture').value.trim(),
+        content: document.getElementById('inpContent').value.trim(),
+        interpretation: document.getElementById('inpInterp').value.trim(),
+        imagePath: currentImageBase64
+      };
+
+      entries.unshift(newItem);
+      await saveStorageAndCloud();
+      resetForm();
+      alert('✨ 靈程便籤已珍藏並同步！');
+      switchTab('history');
+    }
+
+    function renderHistory() {
+      const kw = document.getElementById('searchBox').value.trim().toLowerCase();
+      const listEl = document.getElementById('historyList');
+      const filtered = entries.filter(e => 
+        (e.title || '').toLowerCase().includes(kw) ||
+        (e.content || '').toLowerCase().includes(kw) ||
+        (e.tags || '').toLowerCase().includes(kw) ||
+        (e.scriptureRef || '').toLowerCase().includes(kw)
+      );
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `<div class="bg-white rounded-3xl p-8 text-center text-slate-400 text-sm border-doodle">尚無相符的靈程記錄 🍃</div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(item => `
+        <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 space-y-2.5">
+          <div onclick="openDetail('${item.id}')" class="cursor-pointer space-y-2">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-xs px-2 py-0.5 rounded-full font-bold mr-1.5 ${getTypeBadgeClass(item.type)}">${item.type}</span>
+                <span class="text-xs px-2 py-0.5 rounded-full font-bold ${getStatusBadgeClass(item.status)}">${item.status}</span>
+                <h3 class="font-bold text-slate-800 text-base mt-1.5 leading-snug">${item.title}</h3>
+              </div>
+              <span class="text-[11px] text-slate-400">${(item.occurredAt || '').replace('T', ' ').substring(0, 16)}</span>
+            </div>
+            ${item.tags ? `<div class="text-xs text-purple-600 flex items-center gap-1 font-medium">🔑 <span>${item.tags}</span></div>` : ''}
+            ${item.scriptureRef ? `<div class="text-xs text-slate-500 flex items-center gap-1">📖 <span>${item.scriptureRef}</span></div>` : ''}
+            <div class="bg-blue-50/80 text-blue-700 py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-between mt-1">
+              <span>📖 點此閱讀完整夢境內文</span><span>🔗 探索關聯 ➔</span>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-slate-100 flex justify-end gap-2">
+            <button onclick="deleteEntry('${item.id}')" class="text-xs bg-rose-50 text-rose-600 border border-rose-200 px-3 py-1.5 rounded-lg font-bold">🗑️ 刪除</button>
+          </div>
         </div>
+      `).join('');
+    }
 
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="text-xs font-bold text-slate-500 mb-1 block">領受分類</label>
-            <select v-model="editModal.item.type" cl
+    function openDetail(id) {
+      const item = entries.find(e => e.id === id);
+      if (!item) return;
+      activeModalItemId = id;
+
+      document.getElementById('modalBadges').innerHTML = `
+        <span class="text-xs px-2 py-0.5 rounded-full font-bold ${getTypeBadgeClass(item.type)}">${item.type}</span>
+        <span class="text-xs px-2 py-0.5 rounded-full font-bold ${getStatusBadgeClass(item.status)}">${item.status}</span>
+      `;
+      document.getElementById('modalTitle').innerText = item.title;
+      document.getElementById('modalDate').innerText = `📅 領受時間：${(item.occurredAt || '').replace('T', ' ')}`;
+      
+      let metaHtml = '';
+      if (item.tags) metaHtml += `<div class="text-purple-700 font-semibold">🔑 象徵符號：${item.tags}</div>`;
+      if (item.scriptureRef) metaHtml += `<div class="text-blue-700 font-semibold">📖 呼應經文：${item.scriptureRef}</div>`;
+      document.getElementById('modalMeta').innerHTML = metaHtml;
+      document.getElementById('modalMeta').classList.toggle('hidden', !metaHtml);
+
+      const imgContainer = document.getElementById('modalImgContainer');
+      if (item.imagePath) {
+        document.getElementById('modalImg').src = item.imagePath;
+        imgContainer.classList.remove('hidden');
+      } else {
+        imgContainer.classList.add('hidden');
+      }
+
+      document.getElementById('modalContent').innerText = item.content || '（無內容描述）';
+
+      const interpWrap = document.getElementById('modalInterpWrap');
+      if (item.interpretation) {
+        document.getElementById('modalInterp').innerText = item.interpretation;
+        interpWrap.classList.remove('hidden');
+      } else {
+        interpWrap.classList
