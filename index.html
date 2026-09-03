@@ -50,9 +50,15 @@
         }
         .stats-grid {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             flex-wrap: wrap;
             margin-top: 8px;
+        }
+        .stats-badge {
+            background: #f0f4f8;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
         }
         /* 搜尋列與分類按鈕 */
         .search-bar {
@@ -84,7 +90,7 @@
             color: white;
             border-color: #4a90e2;
         }
-        /* 關鍵字標籤雲區域 */
+        /* 熱門關鍵字標籤雲 (前10個) */
         .tag-cloud {
             background: white;
             padding: 12px 15px;
@@ -196,15 +202,15 @@
 
     <!-- 系統統計與顯示區域 -->
     <div class="stats-panel">
-        <strong>📊 系統資料概況</strong>
+        <strong>📊 紀錄分類統計概況</strong>
         <div class="stats-grid" id="statsGrid">
-            <span>總記錄數：載入中...</span>
+            <span class="stats-badge">載入中...</span>
         </div>
     </div>
 
-    <!-- 關鍵字標籤雲與數量統計 -->
+    <!-- 關鍵字熱門列表 (前10個) -->
     <div class="tag-cloud">
-        <div class="tag-cloud-title">🏷️ 關鍵字熱門列表與篩選（點擊可檢視對應夢境）</div>
+        <div class="tag-cloud-title">🏷️ 熱門關鍵字列表（前 10 名，點擊可直接檢視對應夢境）</div>
         <div class="tag-chips" id="tagChips">
             <span style="color: #888; font-size: 13px;">載入後顯示關鍵字...</span>
         </div>
@@ -213,10 +219,12 @@
     <!-- 關鍵字搜尋輸入框 -->
     <input type="text" id="searchInput" class="search-bar" placeholder="🔍 輸入關鍵字搜尋標題、內容、經文或標籤..." oninput="filterData()">
 
-    <!-- 分類過濾按鈕區塊 (附帶各區塊數量) -->
+    <!-- 分類過濾按鈕區塊 -->
     <div class="category-filters" id="categoryFilters">
         <button class="filter-btn active" onclick="setCategory('全部', this)">全部</button>
-        <button class="filter-btn" onclick="setCategory('異象', this)">異象異夢</button>
+        <button class="filter-btn" onclick="setCategory('異夢', this)">異夢</button>
+        <button class="filter-btn" onclick="setCategory('異象', this)">異象</button>
+        <button class="filter-btn" onclick="setCategory('啟示', this)">啟示</button>
         <button class="filter-btn" onclick="setCategory('禱告查驗', this)">禱告查驗</button>
         <button class="filter-btn" onclick="setCategory('已獲印證', this)">已獲印證</button>
         <button class="filter-btn" onclick="setCategory('已完全成就', this)">已完全成就</button>
@@ -262,37 +270,42 @@
         }
     }
 
-    // 計算各分類與關鍵字統計
+    // 計算各分類與前10大熱門關鍵字統計
     function updateStatsAndTags() {
         const total = originalData.length;
+        const countDream = originalData.filter(i => i.type && i.type.includes('異夢')).length;
         const countVision = originalData.filter(i => i.type && i.type.includes('異象')).length;
+        const countRevelation = originalData.filter(i => i.type && i.type.includes('啟示')).length;
         const countTest = originalData.filter(i => (i.type && i.type.includes('禱告查驗')) || (i.status && i.status.includes('禱告查驗'))).length;
         const countVerify = originalData.filter(i => (i.type && i.type.includes('已獲印證')) || (i.status && i.status.includes('已獲印證'))).length;
         const countFulfilled = originalData.filter(i => (i.type && i.type.includes('已完全成就')) || (i.status && i.status.includes('已完全成就'))).length;
 
-        // 更新頂部數據面板
+        // 更新頂部數據面板 (明確分列異象、異夢、啟示與其他狀態)
         document.getElementById('statsGrid').innerHTML = `
-            <span>總筆數：<b>${total}</b></span>
-            <span>異象異夢：<b>${countVision}</b></span>
-            <span>禱告查驗：<b>${countTest}</b></span>
-            <span>已獲印證：<b>${countVerify}</b></span>
-            <span>已完全成就：<b>${countFulfilled}</b></span>
+            <span class="stats-badge">總筆數：<b>${total}</b></span>
+            <span class="stats-badge">異夢：<b>${countDream}</b></span>
+            <span class="stats-badge">異象：<b>${countVision}</b></span>
+            <span class="stats-badge">啟示：<b>${countRevelation}</b></span>
+            <span class="stats-badge">禱告查驗：<b>${countTest}</b></span>
+            <span class="stats-badge">已獲印證：<b>${countVerify}</b></span>
+            <span class="stats-badge">已完全成就：<b>${countFulfilled}</b></span>
         `;
 
         // 更新分類按鈕文字與數量
         document.getElementById('categoryFilters').innerHTML = `
             <button class="filter-btn ${currentCategory === '全部' ? 'active' : ''}" onclick="setCategory('全部', this)">全部 (${total})</button>
-            <button class="filter-btn ${currentCategory === '異象' ? 'active' : ''}" onclick="setCategory('異象', this)">異象異夢 (${countVision})</button>
+            <button class="filter-btn ${currentCategory === '異夢' ? 'active' : ''}" onclick="setCategory('異夢', this)">異夢 (${countDream})</button>
+            <button class="filter-btn ${currentCategory === '異象' ? 'active' : ''}" onclick="setCategory('異象', this)">異象 (${countVision})</button>
+            <button class="filter-btn ${currentCategory === '啟示' ? 'active' : ''}" onclick="setCategory('啟示', this)">啟示 (${countRevelation})</button>
             <button class="filter-btn ${currentCategory === '禱告查驗' ? 'active' : ''}" onclick="setCategory('禱告查驗', this)">禱告查驗 (${countTest})</button>
             <button class="filter-btn ${currentCategory === '已獲印證' ? 'active' : ''}" onclick="setCategory('已獲印證', this)">已獲印證 (${countVerify})</button>
             <button class="filter-btn ${currentCategory === '已完全成就' ? 'active' : ''}" onclick="setCategory('已完全成就', this)">已完全成就 (${countFulfilled})</button>
         `;
 
-        // 統計關鍵字 / 標籤數量與對應夢境
+        // 統計關鍵字 / 標籤數量，並限制取前 10 個最高頻率的關鍵字
         const tagMap = {};
         originalData.forEach(item => {
             if (item.tags) {
-                // 支援逗號或空格分隔的標籤
                 const tags = item.tags.split(/[,，\s]+/).filter(t => t.trim() !== '');
                 tags.forEach(tag => {
                     const cleanTag = tag.replace('#', '').trim();
@@ -302,22 +315,22 @@
             }
         });
 
+        const sortedTags = Object.keys(tagMap).sort((a, b) => tagMap[b] - tagMap[a]).slice(0, 10);
         const tagChipsContainer = document.getElementById('tagChips');
-        const tagKeys = Object.keys(tagMap);
         
-        if (tagKeys.length === 0) {
+        if (sortedTags.length === 0) {
             tagChipsContainer.innerHTML = `<span style="color: #888; font-size: 13px;">目前沒有設定任何標籤關鍵字</span>`;
             return;
         }
 
-        tagChipsContainer.innerHTML = tagKeys.map(tag => `
+        tagChipsContainer.innerHTML = sortedTags.map(tag => `
             <div class="tag-chip ${currentTag === tag ? 'active' : ''}" onclick="toggleTagFilter('${tag}')">
                 #${tag} (${tagMap[tag]})
             </div>
         `).join('');
     }
 
-    // 點擊標籤進行獨立篩選
+    // 點擊標籤進行獨立篩選與切換
     function toggleTagFilter(tag) {
         if (currentTag === tag) {
             currentTag = ''; // 再點一次取消篩選
@@ -385,9 +398,9 @@
                 ? `<a href="https://www.google.com/search?q=聖經+${encodeURIComponent(item.scriptureRef)}" target="_blank" class="web-link">📖 ${item.scriptureRef}</a>` 
                 : '';
 
-            // 網路新聞與相關文章查詢按鈕 (透過標題或關鍵字進行網路搜尋)
-            const searchQuery = item.title || item.content.substring(0, 15);
-            const webSearchHtml = `<a href="https://www.google.com/search?q=${encodeURIComponent(searchQuery)}" target="_blank" class="web-link">🌐 網路新聞/文章查詢</a>`;
+            // 網路新聞與相關文章查詢按鈕
+            const searchQuery = item.title || (item.content ? item.content.substring(0, 15) : '');
+            const webSearchHtml = searchQuery ? `<a href="https://www.google.com/search?q=${encodeURIComponent(searchQuery)}" target="_blank" class="web-link">🌐 網路新聞/文章查詢</a>` : '';
 
             return `
                 <div class="card">
@@ -417,7 +430,7 @@
 
     // 刪除功能
     async function deleteItem(firebaseKey) {
-        if (!confirm("確定要刪除這筆異象記錄嗎？")) return;
+        if (!confirm("確定要刪除這筆記錄嗎？")) return;
 
         try {
             const response = await fetch(`${databaseUrl}/${firebaseKey}.json`, {
