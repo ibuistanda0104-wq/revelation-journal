@@ -480,7 +480,7 @@
     let currentTag = '';
     const databaseUrl = "https://revelation-sync-default-rtdb.firebaseio.com/";
 
-    // 從 Firebase 載入資料
+    // 從 Firebase 載入資料（兼容數字索引與巢狀節點）
     async function fetchDreams() {
         const cardList = document.getElementById('cardList');
         cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">同步中...</div>`;
@@ -490,10 +490,16 @@
             const data = await response.json();
             
             if (data) {
-                originalData = Object.keys(data)
+                // 如果資料被包在頂層的 '0' 節點裡，自動解開它
+                let rawData = data;
+                if (data['0'] && typeof data['0'] === 'object' && !data['0'].title) {
+                    rawData = data['0'];
+                }
+
+                originalData = Object.keys(rawData)
                     .map(key => ({
                         firebaseKey: key,
-                        ...data[key]
+                        ...rawData[key]
                     }))
                     .filter(item => item && item.title); // 自動排除空白資料
                 
