@@ -21,12 +21,18 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         h1 {
             font-size: 24px;
             margin: 0;
         }
-        .sync-btn {
+        .header-btns {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-primary {
             background-color: #4a90e2;
             color: white;
             border: none;
@@ -35,8 +41,20 @@
             cursor: pointer;
             font-size: 14px;
         }
-        .sync-btn:hover {
+        .btn-primary:hover {
             background-color: #357abd;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-success:hover {
+            background-color: #218838;
         }
         /* 統計資訊面板 */
         .stats-panel {
@@ -190,6 +208,45 @@
         }
         .btn-edit:hover { background-color: #f0f0f0; }
         .btn-delete:hover { background-color: #ffe6e6; color: #c00; border-color: #c00; }
+        
+        /* 彈跳視窗樣式 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 550px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #444;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
@@ -197,10 +254,13 @@
 <div class="container">
     <header>
         <h1>☁️ 異象與啟示記錄系統</h1>
-        <button class="sync-btn" onclick="fetchDreams()">☁️ 同步資料</button>
+        <div class="header-btns">
+            <button class="btn-success" onclick="openAddModal()">➕ 新增記錄</button>
+            <button class="btn-primary" onclick="fetchDreams()">☁️ 同步資料</button>
+        </div>
     </header>
 
-    <!-- 系統統計與顯示區域 -->
+    <!-- 統計資訊面板 -->
     <div class="stats-panel">
         <strong>📊 紀錄分類統計概況</strong>
         <div class="stats-grid" id="statsGrid">
@@ -233,6 +293,61 @@
     <!-- 資料顯示清單 -->
     <div id="cardList" class="card-list">
         <div style="text-align: center; color: #888; padding: 40px;">請點擊右上角「同步資料」載入記錄</div>
+    </div>
+</div>
+
+<!-- 新增記錄彈跳視窗 -->
+<div id="addModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 style="margin-top: 0; color: #2c3e50;">✨ 新增異象/異夢/啟示記錄</h3>
+        <form id="addForm" onsubmit="saveNewItem(event)">
+            <div class="form-group">
+                <label>標題：</label>
+                <input type="text" id="addTitle" required placeholder="請輸入標題">
+            </div>
+            <div class="form-group">
+                <label>發生日期：</label>
+                <input type="date" id="addOccurredAt">
+            </div>
+            <div class="form-group">
+                <label>分類類型：</label>
+                <select id="addType">
+                    <option value="異夢">異夢</option>
+                    <option value="異象">異象</option>
+                    <option value="啟示">啟示</option>
+                    <option value="禱告查驗">禱告查驗</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>狀態：</label>
+                <select id="addStatus">
+                    <option value="未設定">未設定</option>
+                    <option value="禱告查驗">禱告查驗</option>
+                    <option value="已獲印證">已獲印證</option>
+                    <option value="已完全成就">已完全成就</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>經文參考：</label>
+                <input type="text" id="addScriptureRef" placeholder="例如：約翰福音 3:16">
+            </div>
+            <div class="form-group">
+                <label>領受與解讀：</label>
+                <textarea id="addInterpretation" rows="2" placeholder="請輸入領受與解讀"></textarea>
+            </div>
+            <div class="form-group">
+                <label>標籤 (用逗號或空格分隔)：</label>
+                <input type="text" id="addTags" placeholder="例如：恩賜, 復興, 異象">
+            </div>
+            <div class="form-group">
+                <label>詳細內文：</label>
+                <textarea id="addContent" rows="4" required placeholder="請輸入詳細夢境或異象內文..."></textarea>
+            </div>
+            <div style="text-align: right; margin-top: 15px; display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" onclick="closeAddModal()" style="padding: 8px 16px; background: #ddd; border: none; border-radius: 6px; cursor: pointer;">取消</button>
+                <button type="submit" class="btn-primary" style="padding: 8px 16px;">確認新增</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -280,7 +395,7 @@
         const countVerify = originalData.filter(i => (i.type && i.type.includes('已獲印證')) || (i.status && i.status.includes('已獲印證'))).length;
         const countFulfilled = originalData.filter(i => (i.type && i.type.includes('已完全成就')) || (i.status && i.status.includes('已完全成就'))).length;
 
-        // 更新頂部數據面板 (明確分列異象、異夢、啟示與其他狀態)
+        // 更新頂部數據面板
         document.getElementById('statsGrid').innerHTML = `
             <span class="stats-badge">總筆數：<b>${total}</b></span>
             <span class="stats-badge">異夢：<b>${countDream}</b></span>
@@ -382,6 +497,50 @@
         currentTag = ''; // 切換大分類時重置標籤選擇
         updateStatsAndTags();
         filterData();
+    }
+
+    // 開啟與關閉新增彈窗
+    function openAddModal() {
+        document.getElementById('addModal').style.display = 'flex';
+        document.getElementById('addOccurredAt').value = new Date().toISOString().split('T')[0];
+    }
+    function closeAddModal() {
+        document.getElementById('addModal').style.display = 'none';
+        document.getElementById('addForm').reset();
+    }
+
+    // 儲存新記錄至 Firebase
+    async function saveNewItem(event) {
+        event.preventDefault();
+        const newItem = {
+            title: document.getElementById('addTitle').value,
+            occurredAt: document.getElementById('addOccurredAt').value,
+            type: document.getElementById('addType').value,
+            status: document.getElementById('addStatus').value,
+            scriptureRef: document.getElementById('addScriptureRef').value,
+            interpretation: document.getElementById('addInterpretation').value,
+            tags: document.getElementById('addTags').value,
+            content: document.getElementById('addContent').value
+        };
+
+        try {
+            const response = await fetch(databaseUrl + ".json", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newItem)
+            });
+
+            if (response.ok) {
+                alert("新增成功！");
+                closeAddModal();
+                fetchDreams();
+            } else {
+                alert("新增失敗");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("發生錯誤");
+        }
     }
 
     // 渲染卡片
