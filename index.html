@@ -480,7 +480,7 @@
     let currentTag = '';
     const databaseUrl = "https://revelation-sync-default-rtdb.firebaseio.com/";
 
-    // 從 Firebase 載入資料（兼容數字索引與巢狀節點）
+    // 智慧雙向掃描：自動抓取根目錄與容器內的所有記錄
     async function fetchDreams() {
         const cardList = document.getElementById('cardList');
         cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">同步中...</div>`;
@@ -490,19 +490,27 @@
             const data = await response.json();
             
             if (data) {
-                // 如果資料被包在頂層的 '0' 節點裡，自動解開它
-                let rawData = data;
-                if (data['0'] && typeof data['0'] === 'object' && !data['0'].title) {
-                    rawData = data['0'];
-                }
+                let extractedItems = [];
 
-                originalData = Object.keys(rawData)
-                    .map(key => ({
-                        firebaseKey: key,
-                        ...rawData[key]
-                    }))
-                    .filter(item => item && item.title); // 自動排除空白資料
-                
+                Object.keys(data).forEach(rootKey => {
+                    let val = data[rootKey];
+                    if (val && typeof val === 'object') {
+                        if (val.title) {
+                            // 如果該節點本身就是一筆記錄
+                            extractedItems.push({ firebaseKey: rootKey, ...val });
+                        } else {
+                            // 如果該節點是像 0 這樣的容器，深入內部把所有子記錄撈出來
+                            Object.keys(val).forEach(subKey => {
+                                let subVal = val[subKey];
+                                if (subVal && typeof subVal === 'object' && subVal.title) {
+                                    extractedItems.push({ firebaseKey: `${rootKey}/${subKey}`, ...subVal });
+                                }
+                            });
+                        }
+                    }
+                });
+
+                originalData = extractedItems;
                 updateStatsAndTags();
                 filterData();
             } else {
