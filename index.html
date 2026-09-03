@@ -38,6 +38,16 @@
         .sync-btn:hover {
             background-color: #357abd;
         }
+        /* 搜尋列與分類按鈕 */
+        .search-bar {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
         .category-filters {
             display: flex;
             gap: 8px;
@@ -58,6 +68,7 @@
             color: white;
             border-color: #4a90e2;
         }
+        /* 卡片清單樣式 */
         .card-list {
             display: flex;
             flex-direction: column;
@@ -87,12 +98,35 @@
             line-height: 1.5;
             color: #444;
             white-space: pre-wrap;
+            margin-bottom: 10px;
         }
-        .card-tags {
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
             margin-top: 10px;
-            font-size: 12px;
-            color: #0066cc;
+            font-size: 13px;
         }
+        .scripture-link {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .scripture-link:hover {
+            text-decoration: underline;
+        }
+        .action-btns button {
+            padding: 4px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            background: #fff;
+            margin-left: 5px;
+        }
+        .btn-edit:hover { background-color: #f0f0f0; }
+        .btn-delete:hover { background-color: #ffe6e6; color: #c00; border-color: #c00; }
     </style>
 </head>
 <body>
@@ -103,14 +137,19 @@
         <button class="sync-btn" onclick="fetchDreams()">☁️ 同步資料</button>
     </header>
 
+    <!-- 關鍵字搜尋輸入框 -->
+    <input type="text" id="searchInput" class="search-bar" placeholder="🔍 輸入關鍵字搜尋標題、內容、經文或標籤..." oninput="filterData()">
+
+    <!-- 分類過濾按鈕區塊 -->
     <div class="category-filters">
-        <button class="filter-btn active" onclick="filterCategory('全部', this)">全部</button>
-        <button class="filter-btn" onclick="filterCategory('異象', this)">異象異夢</button>
-        <button class="filter-btn" onclick="filterCategory('禱告查驗', this)">禱告查驗</button>
-        <button class="filter-btn" onclick="filterCategory('已獲印證', this)">已獲印證</button>
-        <button class="filter-btn" onclick="filterCategory('已完全成就', this)">已完全成就</button>
+        <button class="filter-btn active" onclick="setCategory('全部', this)">全部</button>
+        <button class="filter-btn" onclick="setCategory('異象', this)">異象異夢</button>
+        <button class="filter-btn" onclick="setCategory('禱告查驗', this)">禱告查驗</button>
+        <button class="filter-btn" onclick="setCategory('已獲印證', this)">已獲印證</button>
+        <button class="filter-btn" onclick="setCategory('已完全成就', this)">已完全成就</button>
     </div>
 
+    <!-- 資料顯示清單 -->
     <div id="cardList" class="card-list">
         <div style="text-align: center; color: #888; padding: 40px;">請點擊右上角「同步資料」載入記錄</div>
     </div>
@@ -118,14 +157,16 @@
 
 <script>
     let originalData = [];
-    const databaseUrl = "https://revelation-sync-default-rtdb.firebaseio.com/.json";
+    let currentCategory = '全部';
+    const databaseUrl = "https://revelation-sync-default-rtdb.firebaseio.com/";
 
+    // 從 Firebase 載入資料
     async function fetchDreams() {
         const cardList = document.getElementById('cardList');
         cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">同步中...</div>`;
 
         try {
-            const response = await fetch(databaseUrl);
+            const response = await fetch(databaseUrl + ".json");
             const data = await response.json();
             
             if (data) {
@@ -134,9 +175,9 @@
                         firebaseKey: key,
                         ...data[key]
                     }))
-                    .filter(item => item && item.title); // 自動排除空白或格式錯誤的資料
+                    .filter(item => item && item.title); // 自動排除空白資料
                 
-                renderDreams(originalData);
+                filterData();
             } else {
                 cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">目前沒有資料</div>`;
             }
@@ -146,6 +187,44 @@
         }
     }
 
+    // 篩選與搜尋整合邏輯
+    function filterData() {
+        const keyword = document.getElementById('searchInput').value.toLowerCase();
+
+        let filtered = originalData.filter(item => {
+            // 分類篩選
+            let matchCategory = true;
+            if (currentCategory !== '全部') {
+                matchCategory = (item.type && item.type.includes(currentCategory)) ||
+                                (item.status && item.status.includes(currentCategory)) ||
+                                (item.tags && item.tags.includes(currentCategory));
+            }
+
+            // 關鍵字搜尋（比對標題、內容、經文、標籤）
+            let matchKeyword = true;
+            if (keyword) {
+                matchKeyword = (item.title && item.title.toLowerCase().includes(keyword)) ||
+                               (item.content && item.content.toLowerCase().includes(keyword)) ||
+                               (item.scriptureRef && item.scriptureRef.toLowerCase().includes(keyword)) ||
+                               (item.tags && item.tags.toLowerCase().includes(keyword)) ||
+                               (item.interpretation && item.interpretation.toLowerCase().includes(keyword));
+            }
+
+            return matchCategory && matchKeyword;
+        });
+
+        renderDreams(filtered);
+    }
+
+    // 切換分類
+    function setCategory(category, btnElement) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+        currentCategory = category;
+        filterData();
+    }
+
+    // 渲染卡片
     function renderDreams(items) {
         const cardList = document.getElementById('cardList');
         if (items.length === 0) {
@@ -153,37 +232,93 @@
             return;
         }
 
-        cardList.innerHTML = items.map(item => `
-            <div class="card">
-                <div class="card-header">
-                    <span>📅 ${item.occurredAt || '未知日期'}</span>
-                    <span>🏷️ ${item.type || '未分類'} | 狀態: ${item.status || '未設定'}</span>
+        cardList.innerHTML = items.map(item => {
+            // 經文網路查詢連結 (點擊可直接連到線上聖經搜尋)
+            const scriptureHtml = item.scriptureRef 
+                ? `<a href="https://www.google.com/search?q=聖經+${encodeURIComponent(item.scriptureRef)}" target="_blank" class="scripture-link">📖 ${item.scriptureRef}</a>` 
+                : '';
+
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <span>📅 ${item.occurredAt || '未知日期'}</span>
+                        <span>🏷️ ${item.type || '未分類'} | 狀態: ${item.status || '未設定'}</span>
+                    </div>
+                    <h3 class="card-title">${item.title || '無標題'}</h3>
+                    <div class="card-content">${item.content || ''}</div>
+                    ${item.interpretation ? `<div style="font-size: 14px; color: #555; background: #f9f9f9; padding: 8px; border-radius: 4px; margin-bottom: 8px;"><strong>💡 領受與解讀：</strong>${item.interpretation}</div>` : ''}
+                    ${item.tags ? `<div style="font-size: 12px; color: #0066cc; margin-bottom: 8px;">#${item.tags.replace(/,/g, ' #')}</div>` : ''}
+                    
+                    <div class="card-footer">
+                        <div>${scriptureHtml}</div>
+                        <div class="action-btns">
+                            <button class="btn-edit" onclick="editItem('${item.firebaseKey}')">修改</button>
+                            <button class="btn-delete" onclick="deleteItem('${item.firebaseKey}')">刪除</button>
+                        </div>
+                    </div>
                 </div>
-                <h3 class="card-title">${item.title || '無標題'}</h3>
-                <div class="card-content">${item.content || ''}</div>
-                ${item.tags ? `<div class="card-tags">#${item.tags.replace(/,/g, ' #')}</div>` : ''}
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
-    function filterCategory(category, btnElement) {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btnElement.classList.add('active');
+    // 刪除功能
+    async function deleteItem(firebaseKey) {
+        if (!confirm("確定要刪除這筆異象記錄嗎？")) return;
 
-        if (category === '全部') {
-            renderDreams(originalData);
-            return;
+        try {
+            const response = await fetch(`${databaseUrl}/${firebaseKey}.json`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                fetchDreams(); // 重新載入
+            } else {
+                alert("刪除失敗");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("刪除發生錯誤");
         }
-
-        const filtered = originalData.filter(item => {
-            return (item.type && item.type.includes(category)) ||
-                   (item.status && item.status.includes(category)) ||
-                   (item.tags && item.tags.includes(category));
-        });
-
-        renderDreams(filtered);
     }
 
+    // 修改功能 (使用彈跳視窗互動更新標題與內容)
+    async function editItem(firebaseKey) {
+        const item = originalData.find(d => d.firebaseKey === firebaseKey);
+        if (!item) return;
+
+        const newTitle = prompt("修改標題：", item.title || "");
+        if (newTitle === null) return; // 取消
+
+        const newContent = prompt("修改內文：", item.content || "");
+        if (newContent === null) return;
+
+        const updatedData = {
+            ...item,
+            title: newTitle,
+            content: newContent
+        };
+        delete updatedData.firebaseKey; // 不用把 key 存進資料本體
+
+        try {
+            const response = await fetch(`${databaseUrl}/${firebaseKey}.json`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedData)
+            });
+
+            if (response.ok) {
+                alert("修改成功！");
+                fetchDreams();
+            } else {
+                alert("修改失敗");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("修改發生錯誤");
+        }
+    }
+
+    // 網頁開啟時自動同步
     window.onload = function() {
         fetchDreams();
     };
