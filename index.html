@@ -68,15 +68,22 @@
         }
         .stats-grid {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             flex-wrap: wrap;
             margin-top: 8px;
         }
         .stats-badge {
             background: #f0f4f8;
-            padding: 4px 10px;
+            padding: 6px 12px;
             border-radius: 6px;
             font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #e1e8ed;
+        }
+        .stats-badge:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
         }
         /* 搜尋列與分類按鈕 */
         .search-bar {
@@ -142,7 +149,12 @@
             color: white;
             border-color: #4a90e2;
         }
-        /* 卡片清單樣式 */
+        /* 可滾動的卡片清單容器 */
+        .scrollable-card-container {
+            max-height: 65vh;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
         .card-list {
             display: flex;
             flex-direction: column;
@@ -260,9 +272,9 @@
         </div>
     </header>
 
-    <!-- 統計資訊面板 -->
+    <!-- 統計資訊面板 (點擊各分類標籤可直接檢視該分類全部內容) -->
     <div class="stats-panel">
-        <strong>📊 紀錄分類統計概況</strong>
+        <strong>📊 紀錄分類統計概況（點擊項目可快速篩選檢視）</strong>
         <div class="stats-grid" id="statsGrid">
             <span class="stats-badge">載入中...</span>
         </div>
@@ -290,9 +302,11 @@
         <button class="filter-btn" onclick="setCategory('已完全成就', this)">已完全成就</button>
     </div>
 
-    <!-- 資料顯示清單 -->
-    <div id="cardList" class="card-list">
-        <div style="text-align: center; color: #888; padding: 40px;">請點擊右上角「同步資料」載入記錄</div>
+    <!-- 資料顯示可滾動清單區域 -->
+    <div class="scrollable-card-container">
+        <div id="cardList" class="card-list">
+            <div style="text-align: center; color: #888; padding: 40px;">請點擊右上角「同步資料」載入記錄</div>
+        </div>
     </div>
 </div>
 
@@ -395,15 +409,15 @@
         const countVerify = originalData.filter(i => (i.type && i.type.includes('已獲印證')) || (i.status && i.status.includes('已獲印證'))).length;
         const countFulfilled = originalData.filter(i => (i.type && i.type.includes('已完全成就')) || (i.status && i.status.includes('已完全成就'))).length;
 
-        // 更新頂部數據面板
+        // 更新頂部數據面板，使每個項目皆可點擊直接檢視對應類別內容
         document.getElementById('statsGrid').innerHTML = `
-            <span class="stats-badge">總筆數：<b>${total}</b></span>
-            <span class="stats-badge">異夢：<b>${countDream}</b></span>
-            <span class="stats-badge">異象：<b>${countVision}</b></span>
-            <span class="stats-badge">啟示：<b>${countRevelation}</b></span>
-            <span class="stats-badge">禱告查驗：<b>${countTest}</b></span>
-            <span class="stats-badge">已獲印證：<b>${countVerify}</b></span>
-            <span class="stats-badge">已完全成就：<b>${countFulfilled}</b></span>
+            <span class="stats-badge" onclick="setCategory('全部', null)">總筆數：<b>${total}</b></span>
+            <span class="stats-badge" onclick="setCategory('異夢', null)">異夢：<b>${countDream}</b></span>
+            <span class="stats-badge" onclick="setCategory('異象', null)">異象：<b>${countVision}</b></span>
+            <span class="stats-badge" onclick="setCategory('啟示', null)">啟示：<b>${countRevelation}</b></span>
+            <span class="stats-badge" onclick="setCategory('禱告查驗', null)">禱告查驗：<b>${countTest}</b></span>
+            <span class="stats-badge" onclick="setCategory('已獲印證', null)">已獲印證：<b>${countVerify}</b></span>
+            <span class="stats-badge" onclick="setCategory('已完全成就', null)">已完全成就：<b>${countFulfilled}</b></span>
         `;
 
         // 更新分類按鈕文字與數量
@@ -497,6 +511,15 @@
         currentTag = ''; // 切換大分類時重置標籤選擇
         updateStatsAndTags();
         filterData();
+        
+        // 同步更新按鈕選取狀態
+        document.querySelectorAll('.filter-btn').forEach(b => {
+            if (b.textContent.includes(category)) {
+                b.classList.add('active');
+            } else {
+                b.classList.remove('active');
+            }
+        });
     }
 
     // 開啟與關閉新增彈窗
