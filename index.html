@@ -1,623 +1,193 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>領受神心意代求手帳</title>
-
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="代求手帳">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2232/2232688.png">
-  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2232/2232688.png">
-
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <style>
-    body {
-      -webkit-tap-highlight-color: transparent;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif;
-    }
-    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
-    .pt-safe { padding-top: env(safe-area-inset-top, 16px); }
-    .border-doodle { border: 2px dashed #bae6fd; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>異象與啟示記錄系統</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            margin: 0;
+        }
+        .sync-btn {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .sync-btn:hover {
+            background-color: #357abd;
+        }
+        .category-filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .filter-btn {
+            padding: 6px 14px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background-color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .filter-btn.active {
+            background-color: #4a90e2;
+            color: white;
+            border-color: #4a90e2;
+        }
+        .card-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .card {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0 0 8px 0;
+            color: #111;
+        }
+        .card-content {
+            font-size: 15px;
+            line-height: 1.5;
+            color: #444;
+            white-space: pre-wrap;
+        }
+        .card-tags {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #0066cc;
+        }
+    </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased flex flex-col min-h-screen">
-  <div class="flex-1 flex flex-col max-w-md mx-auto w-full bg-[#f8fbff] shadow-xl relative min-h-screen">
+<body>
 
-    <!-- 頂部 Header -->
-    <header class="bg-blue-600 text-white pt-safe pb-3.5 px-4 shadow-md sticky top-0 z-30">
-      <div class="flex items-center justify-between mt-2">
-        <h1 class="text-base font-bold tracking-wide flex items-center gap-1.5">
-          <span>🕊️</span> 領受神心意代求手帳
-        </h1>
-        <div class="flex items-center gap-2">
-          <button onclick="syncCloud(true)" id="syncBtn" class="text-xs bg-blue-700 active:bg-blue-800 px-2.5 py-1 rounded-full border border-blue-400 font-bold">
-            ☁️ 同步
-          </button>
-          <span id="totalBadge" class="text-xs bg-amber-400 text-blue-900 font-bold px-2.5 py-1 rounded-full shadow-sm">
-            共 0 篇
-          </span>
-        </div>
-      </div>
+<div class="container">
+    <header>
+        <h1>☁️ 異象與啟示記錄</h1>
+        <button class="sync-btn" onclick="fetchDreams()">☁️ 同步資料</button>
     </header>
 
-    <!-- 主內容滑動區 -->
-    <main class="flex-1 overflow-y-auto px-4 py-4 pb-24 space-y-4">
-
-      <!-- ================= Tab 1: 記錄領受 ================= -->
-      <div id="tab-record" class="space-y-4">
-        <div class="bg-white rounded-3xl p-4 shadow-sm border-doodle space-y-3.5">
-          <div class="flex justify-between items-center border-b border-blue-50 pb-2">
-            <h2 class="text-base font-bold text-blue-600 flex items-center gap-1.5">
-              <span>✍️</span> 寫下代求與領受便籤
-            </h2>
-            <button onclick="resetForm()" class="text-xs text-slate-400 hover:text-slate-600">↺ 清空</button>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="text-xs font-bold text-blue-600 mb-1 block">領受分類 🏷️</label>
-              <select id="inpType" class="w-full bg-slate-50 border border-blue-200 rounded-xl px-2.5 py-2 text-sm font-semibold text-slate-700">
-                <option value="異夢">🌙 異夢 (Dream)</option>
-                <option value="異象">👁️ 異象 (Vision)</option>
-                <option value="啟示">💡 啟示 (Revelation)</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-xs font-bold text-emerald-600 mb-1 block">印證進度 🌱</label>
-              <select id="inpStatus" class="w-full bg-slate-50 border border-emerald-200 rounded-xl px-2.5 py-2 text-sm font-semibold text-slate-700">
-                <option value="禱告中">⏳ 禱告察驗中</option>
-                <option value="已印證">🔍 已獲印證</option>
-                <option value="已應驗">✅ 已完全成就</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label class="text-xs font-bold text-slate-600 mb-1 block">領受時間 📅</label>
-            <input type="datetime-local" id="inpDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium">
-          </div>
-
-          <div>
-            <label class="text-xs font-bold text-slate-600 mb-1 block">領受主題標題 ✏️</label>
-            <input type="text" id="inpTitle" placeholder="請輸入標題（例：為國家與教會代求）" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-800">
-          </div>
-
-          <div>
-            <label class="text-xs font-bold text-purple-600 mb-1 block">象徵符號 / 核心標籤 🔑 (以逗號隔開)</label>
-            <input type="text" id="inpTags" placeholder="例：鑰匙, 門, 獅子, 烈火, 水" class="w-full bg-slate-50 border border-purple-200 rounded-xl px-3 py-2 text-sm">
-          </div>
-
-          <div>
-            <label class="text-xs font-bold text-slate-600 mb-1 block">呼應經文 📖</label>
-            <input type="text" id="inpScripture" placeholder="例：以賽亞書 22:22" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm">
-          </div>
-
-          <div>
-            <label class="text-xs font-bold text-slate-600 mb-1 block">看見 / 聽見之領受細節 💬</label>
-            <textarea id="inpContent" rows="3" placeholder="請詳細記錄看見的異象、夢境或代禱負擔..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm"></textarea>
-          </div>
-
-          <div>
-            <label class="text-xs font-bold text-slate-600 mb-1 block">禱告察驗、解讀與後續印證 🕊️</label>
-            <textarea id="inpInterp" rows="2" placeholder="後續默想領會、長輩印證或代求成就..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm"></textarea>
-          </div>
-
-          <div>
-            <label class="text-xs font-bold text-blue-600 mb-1 block">📷 拍照 / 上傳草圖</label>
-            <input type="file" accept="image/*" id="inpImg" onchange="handleImage(this)" class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:bg-blue-100 file:text-blue-700">
-            <div id="imgPreviewContainer" class="mt-2 relative rounded-2xl overflow-hidden border border-blue-200 hidden">
-              <img id="imgPreview" class="w-full h-44 object-cover">
-              <button onclick="clearImg()" class="absolute top-2 right-2 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full">清除圖片</button>
-            </div>
-          </div>
-
-          <button onclick="saveEntry()" class="w-full py-3.5 bg-blue-600 active:bg-blue-700 text-white rounded-2xl text-base font-bold shadow-md transition">
-            💾 珍藏這筆代求記錄 (同步雲端)
-          </button>
-        </div>
-      </div>
-
-      <!-- ================= Tab 2: 歷史清單 ================= -->
-      <div id="tab-history" class="space-y-4 hidden">
-        <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
-          <div class="relative">
-            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">🔍</span>
-            <input type="text" id="searchBox" oninput="renderHistory()" placeholder="搜尋關鍵字、經文、符號..." class="w-full pl-9 pr-8 py-2 bg-slate-100 border-none rounded-xl text-sm focus:outline-none">
-          </div>
-        </div>
-
-        <div id="historyList" class="space-y-3">
-          <!-- 動態載入卡片 -->
-        </div>
-      </div>
-
-      <!-- ================= Tab 3: 統計看板 ================= -->
-      <div id="tab-stats" class="space-y-4 hidden">
-        <div class="grid grid-cols-2 gap-2">
-          <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 text-center">
-            <div class="text-xs font-bold text-slate-400">總記錄篇數 📚</div>
-            <div id="statTotal" class="text-2xl font-bold text-blue-600 mt-1">0 篇</div>
-          </div>
-          <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 text-center">
-            <div class="text-xs font-bold text-slate-400">已完全成就 ✅</div>
-            <div id="statFulfilled" class="text-2xl font-bold text-emerald-600 mt-1">0 篇</div>
-          </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 space-y-2">
-          <h3 class="text-xs font-bold text-slate-500">📖 領受類型分佈</h3>
-          <div class="grid grid-cols-3 gap-2 pt-1 text-center">
-            <div class="bg-blue-50 p-2 rounded-xl text-blue-700 font-bold text-xs">
-              🌙 異夢<br><span id="statDream" class="text-base">0</span>
-            </div>
-            <div class="bg-amber-50 p-2 rounded-xl text-amber-700 font-bold text-xs">
-              👁️ 異象<br><span id="statVision" class="text-base">0</span>
-            </div>
-            <div class="bg-purple-50 p-2 rounded-xl text-purple-700 font-bold text-xs">
-              💡 啟示<br><span id="statRev" class="text-base">0</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 space-y-3">
-          <h3 class="text-xs font-bold text-slate-500">🔑 高頻象徵符號排行 (Top 8)</h3>
-          <div id="statSymbols" class="divide-y divide-slate-100 text-xs">
-            <!-- 動態排行 -->
-          </div>
-        </div>
-      </div>
-    </main>
-
-    <!-- 底部導航欄 -->
-    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200 flex justify-around py-2 pb-safe z-30 shadow-lg">
-      <button onclick="switchTab('record')" id="btnTabRecord" class="flex flex-col items-center gap-0.5 flex-1 text-blue-600 font-bold">
-        <span class="text-lg">✍️</span><span class="text-[10px]">寫小便籤</span>
-      </button>
-      <button onclick="switchTab('history')" id="btnTabHistory" class="flex flex-col items-center gap-0.5 flex-1 text-slate-400">
-        <span class="text-lg">🔍</span><span class="text-[10px]">清單與關聯</span>
-      </button>
-      <button onclick="switchTab('stats')" id="btnTabStats" class="flex flex-col items-center gap-0.5 flex-1 text-slate-400">
-        <span class="text-lg">📊</span><span class="text-[10px]">統計看板</span>
-      </button>
-    </nav>
-
-    <!-- 📖 詳情與互動彈窗（含修改與網路新聞搜尋） -->
-    <div id="detailModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end justify-center hidden" onclick="closeModal()">
-      <div class="bg-white w-full max-w-md rounded-t-3xl p-5 space-y-4 max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col" onclick="event.stopPropagation()">
-        <div class="flex justify-between items-start border-b pb-3 flex-shrink-0">
-          <div>
-            <div id="modalBadges" class="flex gap-1.5 mb-1"></div>
-            <h2 id="modalTitle" class="text-lg font-bold text-slate-900 leading-snug"></h2>
-            <div id="modalDate" class="text-[11px] text-slate-400 mt-1"></div>
-          </div>
-          <button onclick="closeModal()" class="bg-slate-100 text-slate-500 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
-        </div>
-
-        <!-- 外部新聞/網路相關文章搜尋按鈕 -->
-        <button id="btnSearchWeb" class="w-full py-2.5 bg-indigo-50 active:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5">
-          <span>🌐</span> <span>一鍵搜尋相關新聞與網路文章</span>
-        </button>
-
-        <div id="modalMeta" class="space-y-1.5 bg-blue-50/60 p-3 rounded-2xl text-xs border border-blue-100 flex-shrink-0"></div>
-        <div id="modalImgContainer" class="rounded-2xl overflow-hidden border border-slate-200 hidden">
-          <img id="modalImg" class="w-full max-h-60 object-contain bg-black/5">
-        </div>
-
-        <div class="space-y-1">
-          <h4 class="text-xs font-bold text-slate-500">💬 領受詳細內容：</h4>
-          <div id="modalContent" class="bg-slate-50 p-3.5 rounded-2xl text-sm text-slate-800 whitespace-pre-wrap border border-slate-200"></div>
-        </div>
-
-        <div id="modalInterpWrap" class="space-y-1 hidden">
-          <h4 class="text-xs font-bold text-slate-500">🕊️ 禱告察驗與印證：</h4>
-          <div id="modalInterp" class="bg-amber-50/70 p-3.5 rounded-2xl text-sm text-amber-900 whitespace-pre-wrap border border-amber-200"></div>
-        </div>
-
-        <div class="pt-3 border-t border-slate-200 space-y-2">
-          <h3 class="text-sm font-bold text-blue-900">🔗 智能關聯串接 (共同符號/經文歷史)</h3>
-          <div id="modalRelated" class="space-y-2"></div>
-        </div>
-
-        <div class="flex gap-2 pt-2">
-          <button id="btnOpenEdit" class="flex-1 py-3 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl font-bold text-sm flex items-center justify-center gap-1">
-            <span>✏️</span> 修改記錄
-          </button>
-          <button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm">關閉</button>
-        </div>
-      </div>
+    <div class="category-filters">
+        <button class="filter-btn active" onclick="filterCategory('全部', this)">全部</button>
+        <button class="filter-btn" onclick="filterCategory('異象', this)">異象異夢</button>
+        <button class="filter-btn" onclick="filterCategory('禱告查驗', this)">禱告查驗</button>
+        <button class="filter-btn" onclick="filterCategory('已獲印證', this)">已獲印證</button>
+        <button class="filter-btn" onclick="filterCategory('已完全成就', this)">已完全成就</button>
     </div>
 
-    <!-- ✏️ 修改編輯彈窗 -->
-    <div id="editModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end justify-center hidden" onclick="document.getElementById('editModal').classList.add('hidden')">
-      <div class="bg-white w-full max-w-md rounded-t-3xl p-5 space-y-3 max-h-[90vh] overflow-y-auto shadow-2xl" onclick="event.stopPropagation()">
-        <div class="flex justify-between items-center border-b pb-2">
-          <h3 class="font-bold text-slate-800 text-base">✏️ 修改代求記錄</h3>
-          <button onclick="document.getElementById('editModal').classList.add('hidden')" class="text-slate-400 text-lg font-bold">✕</button>
-        </div>
-
-        <input type="hidden" id="editId">
-
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="text-xs font-bold text-slate-500 mb-1 block">領受分類</label>
-            <select id="editType" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-sm font-semibold">
-              <option value="異夢">異夢</option>
-              <option value="異象">異象</option>
-              <option value="啟示">啟示</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-xs font-bold text-slate-500 mb-1 block">印證狀態</label>
-            <select id="editStatus" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-sm font-semibold">
-              <option value="禱告中">禱告中</option>
-              <option value="已印證">已印證</option>
-              <option value="已應驗">已應驗</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label class="text-xs font-bold text-slate-500 mb-1 block">標題</label>
-          <input type="text" id="editTitle" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold">
-        </div>
-
-        <div>
-          <label class="text-xs font-bold text-slate-500 mb-1 block">象徵符號 (逗號隔開)</label>
-          <input type="text" id="editTags" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm">
-        </div>
-
-        <div>
-          <label class="text-xs font-bold text-slate-500 mb-1 block">呼應經文</label>
-          <input type="text" id="editScripture" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm">
-        </div>
-
-        <div>
-          <label class="text-xs font-bold text-slate-500 mb-1 block">內容描述</label>
-          <textarea id="editContent" rows="3" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm"></textarea>
-        </div>
-
-        <div>
-          <label class="text-xs font-bold text-slate-500 mb-1 block">察驗與印證</label>
-          <textarea id="editInterp" rows="2" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm"></textarea>
-        </div>
-
-        <button onclick="saveEditedEntry()" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold shadow">
-          💾 儲存修改並同步雲端
-        </button>
-      </div>
+    <div id="cardList" class="card-list">
+        <div style="text-align: center; color: #888; padding: 40px;">請點擊右上角「同步資料」載入記錄</div>
     </div>
-  </div>
+</div>
 
-  <script>
-    const FIREBASE_URL = "https://revelation-sync-default-rtdb.firebaseio.com/.json";
-    let entries = JSON.parse(localStorage.getItem('revelation_journal_data')) || [];
-    let currentImageBase64 = "";
-    let activeModalId = null;
+<script>
+    let originalData = [];
+    const databaseUrl = "https://revelation-sync-default-rtdb.firebaseio.com/.json";
 
-    document.getElementById('inpDate').value = new Date().toISOString().substring(0, 16);
-    document.getElementById('totalBadge').innerText = `共 ${entries.length} 篇`;
+    async function fetchDreams() {
+        const cardList = document.getElementById('cardList');
+        cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">同步中...</div>`;
 
-    function switchTab(tab) {
-      document.getElementById('tab-record').classList.toggle('hidden', tab !== 'record');
-      document.getElementById('tab-history').classList.toggle('hidden', tab !== 'history');
-      document.getElementById('tab-stats').classList.toggle('hidden', tab !== 'stats');
-
-      document.getElementById('btnTabRecord').className = `flex flex-col items-center gap-0.5 flex-1 ${tab === 'record' ? 'text-blue-600 font-bold' : 'text-slate-400'}`;
-      document.getElementById('btnTabHistory').className = `flex flex-col items-center gap-0.5 flex-1 ${tab === 'history' ? 'text-blue-600 font-bold' : 'text-slate-400'}`;
-      document.getElementById('btnTabStats').className = `flex flex-col items-center gap-0.5 flex-1 ${tab === 'stats' ? 'text-blue-600 font-bold' : 'text-slate-400'}`;
-
-      if (tab === 'history') renderHistory();
-      if (tab === 'stats') renderStats();
-    }
-
-    async function saveStorageAndCloud() {
-      localStorage.setItem('revelation_journal_data', JSON.stringify(entries));
-      document.getElementById('totalBadge').innerText = `共 ${entries.length} 篇`;
-      try {
-        await fetch(FIREBASE_URL, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(entries)
-        });
-      } catch (e) {}
-    }
-
-    async function syncCloud(showAlert = false) {
-      document.getElementById('syncBtn').innerText = '⏳ 同步中';
-      try {
-        const res = await fetch(FIREBASE_URL);
-        const data = await res.json();
-        if (data) {
-          entries = Array.isArray(data) ? data : Object.values(data);
-          localStorage.setItem('revelation_journal_data', JSON.stringify(entries));
-          if (showAlert) alert('☁️ 雲端同步成功！');
-        } else if (showAlert) {
-          alert('雲端目前為空');
+        try {
+            const response = await fetch(databaseUrl);
+            const data = await response.json();
+            
+            if (data) {
+                originalData = Object.keys(data)
+                    .map(key => ({
+                        firebaseKey: key,
+                        ...data[key]
+                    }))
+                    .filter(item => item && item.title); // 自動排除空白或格式錯誤的資料
+                
+                renderDreams(originalData);
+            } else {
+                cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">目前沒有資料</div>`;
+            }
+        } catch (error) {
+            console.error(error);
+            cardList.innerHTML = `<div style="text-align: center; color: red; padding: 40px;">同步失敗，請檢查網路連線</div>`;
         }
-      } catch (e) {
-        if (showAlert) alert('無法連線雲端');
-      } finally {
-        document.getElementById('syncBtn').innerText = '☁️ 同步';
-        document.getElementById('totalBadge').innerText = `共 ${entries.length} 篇`;
-        renderHistory();
-        renderStats();
-      }
     }
 
-    function handleImage(input) {
-      const file = input.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        currentImageBase64 = e.target.result;
-        document.getElementById('imgPreview').src = currentImageBase64;
-        document.getElementById('imgPreviewContainer').classList.remove('hidden');
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function clearImg() {
-      currentImageBase64 = "";
-      document.getElementById('inpImg').value = "";
-      document.getElementById('imgPreviewContainer').classList.add('hidden');
-    }
-
-    function resetForm() {
-      document.getElementById('inpTitle').value = "";
-      document.getElementById('inpTags').value = "";
-      document.getElementById('inpScripture').value = "";
-      document.getElementById('inpContent').value = "";
-      document.getElementById('inpInterp').value = "";
-      clearImg();
-    }
-
-    async function saveEntry() {
-      const title = document.getElementById('inpTitle').value.trim();
-      if (!title) {
-        alert('請填寫代求標題唷！🌟');
-        return;
-      }
-
-      const newItem = {
-        id: 'id_' + Math.random().toString(36).substring(2, 9),
-        type: document.getElementById('inpType').value,
-        status: document.getElementById('inpStatus').value,
-        occurredAt: document.getElementById('inpDate').value,
-        title: title,
-        tags: document.getElementById('inpTags').value.trim(),
-        scriptureRef: document.getElementById('inpScripture').value.trim(),
-        content: document.getElementById('inpContent').value.trim(),
-        interpretation: document.getElementById('inpInterp').value.trim(),
-        imagePath: currentImageBase64
-      };
-
-      entries.unshift(newItem);
-      await saveStorageAndCloud();
-      resetForm();
-      alert('✨ 代求便籤已珍藏並同步！');
-      switchTab('history');
-    }
-
-    function renderHistory() {
-      const kw = document.getElementById('searchBox').value.trim().toLowerCase();
-      const listEl = document.getElementById('historyList');
-      const filtered = entries.filter(e => 
-        (e.title || '').toLowerCase().includes(kw) ||
-        (e.content || '').toLowerCase().includes(kw) ||
-        (e.tags || '').toLowerCase().includes(kw) ||
-        (e.scriptureRef || '').toLowerCase().includes(kw)
-      );
-
-      if (filtered.length === 0) {
-        listEl.innerHTML = `<div class="bg-white rounded-3xl p-8 text-center text-slate-400 text-sm border-doodle">尚無相符的代求記錄 🍃</div>`;
-        return;
-      }
-
-      listEl.innerHTML = filtered.map(item => `
-        <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 space-y-2.5">
-          <div onclick="openDetail('${item.id}')" class="cursor-pointer space-y-2">
-            <div class="flex justify-between items-start">
-              <div>
-                <span class="text-xs px-2 py-0.5 rounded-full font-bold mr-1.5 ${getTypeBadgeClass(item.type)}">${item.type}</span>
-                <span class="text-xs px-2 py-0.5 rounded-full font-bold ${getStatusBadgeClass(item.status)}">${item.status}</span>
-                <h3 class="font-bold text-slate-800 text-base mt-1.5 leading-snug">${item.title}</h3>
-              </div>
-              <span class="text-[11px] text-slate-400">${(item.occurredAt || '').replace('T', ' ').substring(0, 16)}</span>
-            </div>
-            ${item.tags ? `<div class="text-xs text-purple-600 flex items-center gap-1 font-medium">🔑 <span>${item.tags}</span></div>` : ''}
-            ${item.scriptureRef ? `<div class="text-xs text-slate-500 flex items-center gap-1">📖 <span>${item.scriptureRef}</span></div>` : ''}
-            <div class="bg-blue-50/80 text-blue-700 py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-between mt-1">
-              <span>📖 點此閱讀完整內文與修改</span><span>🔗 探索關聯 ➔</span>
-            </div>
-          </div>
-          <div class="pt-2 border-t border-slate-100 flex justify-end gap-2">
-            <button onclick="openEdit('${item.id}')" class="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-lg font-bold">✏️ 修改</button>
-            <button onclick="deleteEntry('${item.id}')" class="text-xs bg-rose-50 text-rose-600 border border-rose-200 px-3 py-1.5 rounded-lg font-bold">🗑️ 刪除</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function openDetail(id) {
-      const item = entries.find(e => e.id == id);
-      if (!item) return;
-      activeModalId = id;
-
-      document.getElementById('modalBadges').innerHTML = `
-        <span class="text-xs px-2 py-0.5 rounded-full font-bold ${getTypeBadgeClass(item.type)}">${item.type}</span>
-        <span class="text-xs px-2 py-0.5 rounded-full font-bold ${getStatusBadgeClass(item.status)}">${item.status}</span>
-      `;
-      document.getElementById('modalTitle').innerText = item.title;
-      document.getElementById('modalDate').innerText = `📅 領受時間：${(item.occurredAt || '').replace('T', ' ')}`;
-      
-      // 綁定一鍵搜尋網路新聞按鈕
-      document.getElementById('btnSearchWeb').onclick = () => {
-        const query = encodeURIComponent(`${item.title} ${item.tags || ''}`);
-        window.open(`https://www.google.com/search?q=${query}`, '_blank');
-      };
-
-      // 綁定彈窗內的修改按鈕
-      document.getElementById('btnOpenEdit').onclick = () => {
-        closeModal();
-        openEdit(item.id);
-      };
-
-      let metaHtml = '';
-      if (item.tags) metaHtml += `<div class="text-purple-700 font-semibold">🔑 象徵符號：${item.tags}</div>`;
-      if (item.scriptureRef) metaHtml += `<div class="text-blue-700 font-semibold">📖 呼應經文：${item.scriptureRef}</div>`;
-      document.getElementById('modalMeta').innerHTML = metaHtml;
-      document.getElementById('modalMeta').classList.toggle('hidden', !metaHtml);
-
-      const imgContainer = document.getElementById('modalImgContainer');
-      if (item.imagePath) {
-        document.getElementById('modalImg').src = item.imagePath;
-        imgContainer.classList.remove('hidden');
-      } else {
-        imgContainer.classList.add('hidden');
-      }
-
-      document.getElementById('modalContent').innerText = item.content || '（無內容描述）';
-
-      const interpWrap = document.getElementById('modalInterpWrap');
-      if (item.interpretation) {
-        document.getElementById('modalInterp').innerText = item.interpretation;
-        interpWrap.classList.remove('hidden');
-      } else {
-        interpWrap.classList.add('hidden');
-      }
-
-      // 智能關聯運算
-      const targetTags = (item.tags || '').split(/[,，\s、]+/).filter(Boolean).map(t => t.toLowerCase());
-      const relatedEl = document.getElementById('modalRelated');
-      let relHtml = '';
-      
-      entries.forEach(e => {
-        if (e.id == item.id) return;
-        const otherTags = (e.tags || '').split(/[,，\s、]+/).filter(Boolean).map(t => t.toLowerCase());
-        const common = targetTags.filter(t => otherTags.includes(t));
-        let score = common.length * 10;
-        if (item.scriptureRef && e.scriptureRef && item.scriptureRef.trim() === e.scriptureRef.trim()) score += 15;
-
-        if (score > 0) {
-          relHtml += `
-            <div onclick="openDetail('${e.id}')" class="bg-blue-50/70 p-3 rounded-2xl border border-blue-200 space-y-1 cursor-pointer">
-              <div class="flex justify-between items-center">
-                <span class="font-bold text-slate-800 text-xs">${e.title}</span>
-                <span class="text-[11px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">⭐ ${score} 分</span>
-              </div>
-              <div class="text-[11px] text-purple-600 font-medium">共同象徵：${common.join('、')}</div>
-            </div>`;
+    function renderDreams(items) {
+        const cardList = document.getElementById('cardList');
+        if (items.length === 0) {
+            cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">沒有找到符合條件的記錄</div>`;
+            return;
         }
-      });
 
-      relatedEl.innerHTML = relHtml || `<div class="text-xs text-slate-400 bg-slate-50 p-4 rounded-2xl text-center border border-dashed border-slate-200">🌱 歷史中尚未找到具備相同符號或經文的記錄</div>`;
-      document.getElementById('detailModal').classList.remove('hidden');
+        cardList.innerHTML = items.map(item => `
+            <div class="card">
+                <div class="card-header">
+                    <span>📅 ${item.occurredAt || '未知日期'}</span>
+                    <span>🏷️ ${item.type || '未分類'} | 狀態: ${item.status || '未設定'}</span>
+                </div>
+                <h3 class="card-title">${item.title || '無標題'}</h3>
+                <div class="card-content">${item.content || ''}</div>
+                ${item.tags ? `<div class="card-tags">#${item.tags.replace(/,/g, ' #')}</div>` : ''}
+            </div>
+        `).join('');
     }
 
-    function closeModal() {
-      document.getElementById('detailModal').classList.add('hidden');
-    }
+    function filterCategory(category, btnElement) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
 
-    function openEdit(id) {
-      const item = entries.find(e => e.id == id);
-      if (!item) return;
+        if (category === '全部') {
+            renderDreams(originalData);
+            return;
+        }
 
-      document.getElementById('editId').value = item.id;
-      document.getElementById('editType').value = item.type || '異夢';
-      document.getElementById('editStatus').value = item.status || '禱告中';
-      document.getElementById('editTitle').value = item.title || '';
-      document.getElementById('editTags').value = item.tags || '';
-      document.getElementById('editScripture').value = item.scriptureRef || '';
-      document.getElementById('editContent').value = item.content || '';
-      document.getElementById('editInterp').value = item.interpretation || '';
-
-      document.getElementById('editModal').classList.remove('hidden');
-    }
-
-    async function saveEditedEntry() {
-      const id = document.getElementById('editId').value;
-      const index = entries.findIndex(e => e.id == id);
-      if (index === -1) return;
-
-      const title = document.getElementById('editTitle').value.trim();
-      if (!title) {
-        alert('標題不能為空白唷！');
-        return;
-      }
-
-      entries[index].type = document.getElementById('editType').value;
-      entries[index].status = document.getElementById('editStatus').value;
-      entries[index].title = title;
-      entries[index].tags = document.getElementById('editTags').value.trim();
-      entries[index].scriptureRef = document.getElementById('editScripture').value.trim();
-      entries[index].content = document.getElementById('editContent').value.trim();
-      entries[index].interpretation = document.getElementById('editInterp').value.trim();
-
-      await saveStorageAndCloud();
-      document.getElementById('editModal').classList.add('hidden');
-      renderHistory();
-      alert('✨ 記錄修改成功並已同步雲端！');
-    }
-
-    async function deleteEntry(id) {
-      if (confirm('確定要刪除這篇記錄嗎？')) {
-        entries = entries.filter(e => e.id != id);
-        await saveStorageAndCloud();
-        renderHistory();
-        renderStats();
-      }
-    }
-
-    function renderStats() {
-      document.getElementById('statTotal').innerText = `${entries.length} 篇`;
-      document.getElementById('statFulfilled').innerText = `${entries.filter(e => e.status === '已應驗').length} 篇`;
-      document.getElementById('statDream').innerText = entries.filter(e => e.type === '異夢').length;
-      document.getElementById('statVision').innerText = entries.filter(e => e.type === '異象').length;
-      document.getElementById('statRev').innerText = entries.filter(e => e.type === '啟示').length;
-
-      const map = {};
-      entries.forEach(e => {
-        (e.tags || '').split(/[,，\s、]+/).filter(Boolean).forEach(t => {
-          const clean = t.trim();
-          map[clean] = (map[clean] || 0) + 1;
+        const filtered = originalData.filter(item => {
+            return (item.type && item.type.includes(category)) ||
+                   (item.status && item.status.includes(category)) ||
+                   (item.tags && item.tags.includes(category));
         });
-      });
 
-      const sorted = Object.entries(map).map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count).slice(0, 8);
-      const symEl = document.getElementById('statSymbols');
-      
-      if (sorted.length === 0) {
-        symEl.innerHTML = `<div class="text-xs text-slate-400 text-center py-4">尚無足夠符號標籤可供統計</div>`;
-        return;
-      }
-
-      symEl.innerHTML = sorted.map((s, idx) => `
-        <div class="py-2 flex justify-between items-center text-xs">
-          <span class="font-bold text-slate-700 flex items-center gap-1.5">
-            <span class="w-4 h-4 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]">${idx + 1}</span>
-            【${s.tag}】
-          </span>
-          <span class="font-bold text-purple-600">${s.count} 次出現</span>
-        </div>
-      `).join('');
+        renderDreams(filtered);
     }
 
-    function getTypeBadgeClass(type) {
-      if (type === '異夢') return 'bg-blue-100 text-blue-700';
-      if (type === '異象') return 'bg-amber-100 text-amber-700';
-      return 'bg-purple-100 text-purple-700';
-    }
+    window.onload = function() {
+        fetchDreams();
+    };
+</script>
 
-    function getStatusBadgeClass(st) {
-      if (st === '已應驗') return 'bg-emerald-100 text-emerald-700';
-      if (st === '已印證') return 'bg-blue-100 text-blue-700';
-      return 'bg-slate-100 text-slate-600';
-    }
-
-    syncCloud();
-  </script>
 </body>
 </html>
