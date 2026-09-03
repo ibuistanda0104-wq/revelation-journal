@@ -188,6 +188,8 @@
             font-size: 13px;
             color: #666;
             margin-bottom: 6px;
+            flex-wrap: wrap;
+            gap: 5px;
         }
         .card-title {
             font-size: 18px;
@@ -318,7 +320,7 @@
 
     <!-- 搜尋列與排序控制列 -->
     <div class="controls-row">
-        <input type="text" id="searchInput" class="search-bar" placeholder="🔍 輸入關鍵字搜尋標題、內容、經文或標籤..." oninput="filterData()">
+        <input type="text" id="searchInput" class="search-bar" placeholder="🔍 輸入關鍵字搜尋標題、內容、經文、領受者或標籤..." oninput="filterData()">
         <select id="sortOrder" class="sort-select" onchange="filterData()">
             <option value="newest">📅 最新日期優先</option>
             <option value="oldest">📅 最早日期優先</option>
@@ -358,6 +360,10 @@
                 <input type="date" id="addOccurredAt">
             </div>
             <div class="form-group">
+                <label>領受者：</label>
+                <input type="text" id="addRecipient" placeholder="請輸入領受者姓名">
+            </div>
+            <div class="form-group">
                 <label>分類類型：</label>
                 <select id="addType">
                     <option value="異夢">異夢</option>
@@ -369,10 +375,10 @@
             <div class="form-group">
                 <label>狀態：</label>
                 <select id="addStatus">
-                    <option value="未設定">未設定</option>
-                    <option value="禱告查驗">禱告查驗</option>
+                    <option value="禱告查驗" selected>禱告查驗</option>
                     <option value="已獲印證">已獲印證</option>
                     <option value="已完全成就">已完全成就</option>
+                    <option value="未設定">未設定</option>
                 </select>
             </div>
             <div class="form-group">
@@ -404,6 +410,7 @@
     <div class="modal-content">
         <h3 id="detailTitle" style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;"></h3>
         <div class="detail-row"><b>📅 發生日期：</b><span id="detailDate"></span></div>
+        <div class="detail-row" id="detailRecipientContainer"><b>👤 領受者：</b><span id="detailRecipient"></span></div>
         <div class="detail-row"><b>🏷️ 類型與狀態：</b><span id="detailTypeStatus"></span></div>
         <div class="detail-row" id="detailScriptureContainer"><b>📖 經文參考：</b><span id="detailScripture"></span></div>
         <div class="detail-row" id="detailInterpContainer"><b>💡 領受與解讀：</b><div id="detailInterp" style="background: #f9f9f9; padding: 8px; border-radius: 4px; margin-top: 4px;"></div></div>
@@ -433,6 +440,10 @@
                 <input type="date" id="editOccurredAt">
             </div>
             <div class="form-group">
+                <label>領受者：</label>
+                <input type="text" id="editRecipient">
+            </div>
+            <div class="form-group">
                 <label>分類類型：</label>
                 <select id="editType">
                     <option value="異夢">異夢</option>
@@ -444,10 +455,10 @@
             <div class="form-group">
                 <label>狀態：</label>
                 <select id="editStatus">
-                    <option value="未設定">未設定</option>
                     <option value="禱告查驗">禱告查驗</option>
                     <option value="已獲印證">已獲印證</option>
                     <option value="已完全成就">已完全成就</option>
+                    <option value="未設定">未設定</option>
                 </select>
             </div>
             <div class="form-group">
@@ -496,10 +507,8 @@
                     let val = data[rootKey];
                     if (val && typeof val === 'object') {
                         if (val.title) {
-                            // 如果該節點本身就是一筆記錄
                             extractedItems.push({ firebaseKey: rootKey, ...val });
                         } else {
-                            // 如果該節點是像 0 這樣的容器，深入內部把所有子記錄撈出來
                             Object.keys(val).forEach(subKey => {
                                 let subVal = val[subKey];
                                 if (subVal && typeof subVal === 'object' && subVal.title) {
@@ -533,7 +542,6 @@
         const countVerify = originalData.filter(i => (i.type && i.type.includes('已獲印證')) || (i.status && i.status.includes('已獲印證'))).length;
         const countFulfilled = originalData.filter(i => (i.type && i.type.includes('已完全成就')) || (i.status && i.status.includes('已完全成就'))).length;
 
-        // 更新頂部數據面板
         document.getElementById('statsGrid').innerHTML = `
             <span class="stats-badge" onclick="setCategory('全部', null)">總筆數：<b>${total}</b></span>
             <span class="stats-badge" onclick="setCategory('異夢', null)">異夢：<b>${countDream}</b></span>
@@ -544,7 +552,6 @@
             <span class="stats-badge" onclick="setCategory('已完全成就', null)">已完全成就：<b>${countFulfilled}</b></span>
         `;
 
-        // 更新分類按鈕文字與數量
         document.getElementById('categoryFilters').innerHTML = `
             <button class="filter-btn ${currentCategory === '全部' ? 'active' : ''}" onclick="setCategory('全部', this)">全部 (${total})</button>
             <button class="filter-btn ${currentCategory === '異夢' ? 'active' : ''}" onclick="setCategory('異夢', this)">異夢 (${countDream})</button>
@@ -555,7 +562,6 @@
             <button class="filter-btn ${currentCategory === '已完全成就' ? 'active' : ''}" onclick="setCategory('已完全成就', this)">已完全成就 (${countFulfilled})</button>
         `;
 
-        // 統計關鍵字 / 標籤數量，並限制取前 10 個最高頻率的關鍵字
         const tagMap = {};
         originalData.forEach(item => {
             if (item.tags) {
@@ -583,10 +589,9 @@
         `).join('');
     }
 
-    // 點擊標籤進行獨立篩選與切換
     function toggleTagFilter(tag) {
         if (currentTag === tag) {
-            currentTag = ''; // 再點一次取消篩選
+            currentTag = '';
         } else {
             currentTag = tag;
         }
@@ -594,13 +599,11 @@
         filterData();
     }
 
-    // 篩選、搜尋與排序整合邏輯
     function filterData() {
         const keyword = document.getElementById('searchInput').value.toLowerCase();
         const sortOrder = document.getElementById('sortOrder').value;
 
         let filtered = originalData.filter(item => {
-            // 分類篩選
             let matchCategory = true;
             if (currentCategory !== '全部') {
                 matchCategory = (item.type && item.type.includes(currentCategory)) ||
@@ -608,43 +611,40 @@
                                 (item.tags && item.tags.includes(currentCategory));
             }
 
-            // 標籤篩選
             let matchTag = true;
             if (currentTag) {
                 matchTag = item.tags && item.tags.toLowerCase().includes(currentTag.toLowerCase());
             }
 
-            // 關鍵字搜尋（比對標題、內容、經文、標籤）
             let matchKeyword = true;
             if (keyword) {
                 matchKeyword = (item.title && item.title.toLowerCase().includes(keyword)) ||
                                (item.content && item.content.toLowerCase().includes(keyword)) ||
                                (item.scriptureRef && item.scriptureRef.toLowerCase().includes(keyword)) ||
                                (item.tags && item.tags.toLowerCase().includes(keyword)) ||
+                               (item.recipient && item.recipient.toLowerCase().includes(keyword)) ||
                                (item.interpretation && item.interpretation.toLowerCase().includes(keyword));
             }
 
             return matchCategory && matchTag && matchKeyword;
         });
 
-        // 依據選擇的日期排序 (最新/最早優先)
         filtered.sort((a, b) => {
             const dateA = new Date(a.occurredAt || '1970-01-01');
             const dateB = new Date(b.occurredAt || '1970-01-01');
             if (sortOrder === 'newest') {
-                return dateB - dateA; // 新到舊
+                return dateB - dateA;
             } else {
-                return dateA - dateB; // 舊到新
+                return dateA - dateB;
             }
         });
 
         renderDreams(filtered);
     }
 
-    // 切換分類
     function setCategory(category, btnElement) {
         currentCategory = category;
-        currentTag = ''; // 切換大分類時重置標籤選擇
+        currentTag = '';
         updateStatsAndTags();
         filterData();
         
@@ -657,7 +657,6 @@
         });
     }
 
-    // 開啟與關閉新增彈窗
     function openAddModal() {
         document.getElementById('addModal').style.display = 'flex';
         document.getElementById('addOccurredAt').value = new Date().toISOString().split('T')[0];
@@ -667,12 +666,12 @@
         document.getElementById('addForm').reset();
     }
 
-    // 儲存新記錄至 Firebase
     async function saveNewItem(event) {
         event.preventDefault();
         const newItem = {
             title: document.getElementById('addTitle').value,
             occurredAt: document.getElementById('addOccurredAt').value,
+            recipient: document.getElementById('addRecipient').value,
             type: document.getElementById('addType').value,
             status: document.getElementById('addStatus').value,
             scriptureRef: document.getElementById('addScriptureRef').value,
@@ -701,13 +700,21 @@
         }
     }
 
-    // 點擊標題檢視完整內容
     function viewDetail(firebaseKey) {
         const item = originalData.find(d => d.firebaseKey === firebaseKey);
         if (!item) return;
 
         document.getElementById('detailTitle').textContent = item.title || '無標題';
         document.getElementById('detailDate').textContent = item.occurredAt || '未知日期';
+        
+        const recipientContainer = document.getElementById('detailRecipientContainer');
+        if (item.recipient) {
+            document.getElementById('detailRecipient').textContent = item.recipient;
+            recipientContainer.style.display = 'block';
+        } else {
+            recipientContainer.style.display = 'none';
+        }
+
         document.getElementById('detailTypeStatus').textContent = `${item.type || '未分類'} | 狀態: ${item.status || '未設定'}`;
         
         const scriptureContainer = document.getElementById('detailScriptureContainer');
@@ -742,7 +749,6 @@
         document.getElementById('detailModal').style.display = 'none';
     }
 
-    // 開啟完整修改彈窗
     function openEditModal(firebaseKey) {
         const item = originalData.find(d => d.firebaseKey === firebaseKey);
         if (!item) return;
@@ -750,6 +756,7 @@
         document.getElementById('editFirebaseKey').value = item.firebaseKey;
         document.getElementById('editTitle').value = item.title || '';
         document.getElementById('editOccurredAt').value = item.occurredAt || '';
+        document.getElementById('editRecipient').value = item.recipient || '';
         document.getElementById('editType').value = item.type || '異夢';
         document.getElementById('editStatus').value = item.status || '未設定';
         document.getElementById('editScriptureRef').value = item.scriptureRef || '';
@@ -765,13 +772,13 @@
         document.getElementById('editForm').reset();
     }
 
-    // 儲存修改後的完整資料
     async function saveEditedItem(event) {
         event.preventDefault();
         const firebaseKey = document.getElementById('editFirebaseKey').value;
         const updatedItem = {
             title: document.getElementById('editTitle').value,
             occurredAt: document.getElementById('editOccurredAt').value,
+            recipient: document.getElementById('editRecipient').value,
             type: document.getElementById('editType').value,
             status: document.getElementById('editStatus').value,
             scriptureRef: document.getElementById('editScriptureRef').value,
@@ -800,7 +807,6 @@
         }
     }
 
-    // 渲染卡片
     function renderDreams(items) {
         const cardList = document.getElementById('cardList');
         if (items.length === 0) {
@@ -820,10 +826,12 @@
                 ? item.content.substring(0, 100) + '...' 
                 : (item.content || '');
 
+            const recipientHtml = item.recipient ? ` | 領受者: ${item.recipient}` : '';
+
             return `
                 <div class="card">
                     <div class="card-header">
-                        <span>📅 ${item.occurredAt || '未知日期'}</span>
+                        <span>📅 ${item.occurredAt || '未知日期'}${recipientHtml}</span>
                         <span>🏷️ ${item.type || '未分類'} | 狀態: ${item.status || '未設定'}</span>
                     </div>
                     <h3 class="card-title" onclick="viewDetail('${item.firebaseKey}')" title="點擊檢視全文">${item.title || '無標題'}</h3>
@@ -846,7 +854,6 @@
         }).join('');
     }
 
-    // 刪除功能
     async function deleteItem(firebaseKey) {
         if (!confirm("確定要刪除這筆記錄嗎？")) return;
 
@@ -866,7 +873,6 @@
         }
     }
 
-    // 網頁開啟時自動同步
     window.onload = function() {
         fetchDreams();
     };
