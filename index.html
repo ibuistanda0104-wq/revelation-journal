@@ -826,17 +826,19 @@
                 ? item.content.substring(0, 100) + '...' 
                 : (item.content || '');
 
-            const recipientHtml = item.recipient ? ` | 領受者: ${item.recipient}` : '';
+            const recipientHeaderHtml = item.recipient ? ` | 領受者: ${item.recipient}` : '';
+            const recipientBottomHtml = item.recipient ? `<div style="font-size: 13px; color: #555; margin-bottom: 8px;"><strong>👤 領受者：</strong>${item.recipient}</div>` : '';
 
             return `
                 <div class="card">
                     <div class="card-header">
-                        <span>📅 ${item.occurredAt || '未知日期'}${recipientHtml}</span>
+                        <span>📅 ${item.occurredAt || '未知日期'}${recipientHeaderHtml}</span>
                         <span>🏷️ ${item.type || '未分類'} | 狀態: ${item.status || '未設定'}</span>
                     </div>
                     <h3 class="card-title" onclick="viewDetail('${item.firebaseKey}')" title="點擊檢視全文">${item.title || '無標題'}</h3>
                     <div class="card-content">${previewContent}</div>
                     ${item.interpretation ? `<div style="font-size: 14px; color: #555; background: #f9f9f9; padding: 8px; border-radius: 4px; margin-bottom: 8px;"><strong>💡 領受與解讀：</strong>${item.interpretation}</div>` : ''}
+                    ${recipientBottomHtml}
                     ${item.tags ? `<div style="font-size: 12px; color: #0066cc; margin-bottom: 8px;">#${item.tags.replace(/,/g, ' #')}</div>` : ''}
                     
                     <div class="card-footer">
