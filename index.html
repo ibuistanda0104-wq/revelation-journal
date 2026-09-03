@@ -177,7 +177,11 @@
             font-size: 18px;
             font-weight: bold;
             margin: 0 0 8px 0;
-            color: #111;
+            color: #0066cc;
+            cursor: pointer;
+        }
+        .card-title:hover {
+            text-decoration: underline;
         }
         .card-content {
             font-size: 15px;
@@ -259,6 +263,14 @@
             border-radius: 6px;
             box-sizing: border-box;
         }
+        .detail-row {
+            margin-bottom: 10px;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .detail-row b {
+            color: #2c3e50;
+        }
     </style>
 </head>
 <body>
@@ -272,7 +284,7 @@
         </div>
     </header>
 
-    <!-- 統計資訊面板 (點擊各分類標籤可直接檢視該分類全部內容) -->
+    <!-- 統計資訊面板 -->
     <div class="stats-panel">
         <strong>📊 紀錄分類統計概況（點擊項目可快速篩選檢視）</strong>
         <div class="stats-grid" id="statsGrid">
@@ -365,6 +377,81 @@
     </div>
 </div>
 
+<!-- 完整內容檢視彈跳視窗 -->
+<div id="detailModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 id="detailTitle" style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;"></h3>
+        <div class="detail-row"><b>📅 發生日期：</b><span id="detailDate"></span></div>
+        <div class="detail-row"><b>🏷️ 類型與狀態：</b><span id="detailTypeStatus"></span></div>
+        <div class="detail-row" id="detailScriptureContainer"><b>📖 經文參考：</b><span id="detailScripture"></span></div>
+        <div class="detail-row" id="detailInterpContainer"><b>💡 領受與解讀：</b><div id="detailInterp" style="background: #f9f9f9; padding: 8px; border-radius: 4px; margin-top: 4px;"></div></div>
+        <div class="detail-row" id="detailTagsContainer"><b># 標籤：</b><span id="detailTags" style="color: #0066cc;"></span></div>
+        <div class="detail-row" style="margin-top: 15px;">
+            <b>📄 詳細內文：</b>
+            <div id="detailContent" style="background: #f9f9f9; padding: 12px; border-radius: 6px; white-space: pre-wrap; margin-top: 6px; line-height: 1.6;"></div>
+        </div>
+        <div style="text-align: right; margin-top: 20px;">
+            <button type="button" onclick="closeDetailModal()" class="btn-primary" style="padding: 8px 20px;">關閉</button>
+        </div>
+    </div>
+</div>
+
+<!-- 修改記錄完整彈跳視窗 -->
+<div id="editModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 style="margin-top: 0; color: #2c3e50;">✏️ 修改記錄資料</h3>
+        <form id="editForm" onsubmit="saveEditedItem(event)">
+            <input type="hidden" id="editFirebaseKey">
+            <div class="form-group">
+                <label>標題：</label>
+                <input type="text" id="editTitle" required>
+            </div>
+            <div class="form-group">
+                <label>發生日期：</label>
+                <input type="date" id="editOccurredAt">
+            </div>
+            <div class="form-group">
+                <label>分類類型：</label>
+                <select id="editType">
+                    <option value="異夢">異夢</option>
+                    <option value="異象">異象</option>
+                    <option value="啟示">啟示</option>
+                    <option value="禱告查驗">禱告查驗</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>狀態：</label>
+                <select id="editStatus">
+                    <option value="未設定">未設定</option>
+                    <option value="禱告查驗">禱告查驗</option>
+                    <option value="已獲印證">已獲印證</option>
+                    <option value="已完全成就">已完全成就</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>經文參考：</label>
+                <input type="text" id="editScriptureRef">
+            </div>
+            <div class="form-group">
+                <label>領受與解讀：</label>
+                <textarea id="editInterpretation" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label>標籤 (用逗號或空格分隔)：</label>
+                <input type="text" id="editTags">
+            </div>
+            <div class="form-group">
+                <label>詳細內文：</label>
+                <textarea id="editContent" rows="4" required></textarea>
+            </div>
+            <div style="text-align: right; margin-top: 15px; display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" onclick="closeEditModal()" style="padding: 8px 16px; background: #ddd; border: none; border-radius: 6px; cursor: pointer;">取消</button>
+                <button type="submit" class="btn-primary" style="padding: 8px 16px;">儲存修改</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
     let originalData = [];
     let currentCategory = '全部';
@@ -409,7 +496,7 @@
         const countVerify = originalData.filter(i => (i.type && i.type.includes('已獲印證')) || (i.status && i.status.includes('已獲印證'))).length;
         const countFulfilled = originalData.filter(i => (i.type && i.type.includes('已完全成就')) || (i.status && i.status.includes('已完全成就'))).length;
 
-        // 更新頂部數據面板，使每個項目皆可點擊直接檢視對應類別內容
+        // 更新頂部數據面板
         document.getElementById('statsGrid').innerHTML = `
             <span class="stats-badge" onclick="setCategory('全部', null)">總筆數：<b>${total}</b></span>
             <span class="stats-badge" onclick="setCategory('異夢', null)">異夢：<b>${countDream}</b></span>
@@ -512,7 +599,6 @@
         updateStatsAndTags();
         filterData();
         
-        // 同步更新按鈕選取狀態
         document.querySelectorAll('.filter-btn').forEach(b => {
             if (b.textContent.includes(category)) {
                 b.classList.add('active');
@@ -566,6 +652,105 @@
         }
     }
 
+    // 點擊標題檢視完整內容
+    function viewDetail(firebaseKey) {
+        const item = originalData.find(d => d.firebaseKey === firebaseKey);
+        if (!item) return;
+
+        document.getElementById('detailTitle').textContent = item.title || '無標題';
+        document.getElementById('detailDate').textContent = item.occurredAt || '未知日期';
+        document.getElementById('detailTypeStatus').textContent = `${item.type || '未分類'} | 狀態: ${item.status || '未設定'}`;
+        
+        const scriptureContainer = document.getElementById('detailScriptureContainer');
+        if (item.scriptureRef) {
+            document.getElementById('detailScripture').innerHTML = `<a href="https://www.google.com/search?q=聖經+${encodeURIComponent(item.scriptureRef)}" target="_blank" class="web-link">📖 ${item.scriptureRef}</a>`;
+            scriptureContainer.style.display = 'block';
+        } else {
+            scriptureContainer.style.display = 'none';
+        }
+
+        const interpContainer = document.getElementById('detailInterpContainer');
+        if (item.interpretation) {
+            document.getElementById('detailInterp').textContent = item.interpretation;
+            interpContainer.style.display = 'block';
+        } else {
+            interpContainer.style.display = 'none';
+        }
+
+        const tagsContainer = document.getElementById('detailTagsContainer');
+        if (item.tags) {
+            document.getElementById('detailTags').textContent = `#${item.tags.replace(/,/g, ' #')}`;
+            tagsContainer.style.display = 'block';
+        } else {
+            tagsContainer.style.display = 'none';
+        }
+
+        document.getElementById('detailContent').textContent = item.content || '（無內文）';
+        document.getElementById('detailModal').style.display = 'flex';
+    }
+
+    function closeDetailModal() {
+        document.getElementById('detailModal').style.display = 'none';
+    }
+
+    // 開啟完整修改彈窗
+    function openEditModal(firebaseKey) {
+        const item = originalData.find(d => d.firebaseKey === firebaseKey);
+        if (!item) return;
+
+        document.getElementById('editFirebaseKey').value = item.firebaseKey;
+        document.getElementById('editTitle').value = item.title || '';
+        document.getElementById('editOccurredAt').value = item.occurredAt || '';
+        document.getElementById('editType').value = item.type || '異夢';
+        document.getElementById('editStatus').value = item.status || '未設定';
+        document.getElementById('editScriptureRef').value = item.scriptureRef || '';
+        document.getElementById('editInterpretation').value = item.interpretation || '';
+        document.getElementById('editTags').value = item.tags || '';
+        document.getElementById('editContent').value = item.content || '';
+
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+        document.getElementById('editForm').reset();
+    }
+
+    // 儲存修改後的完整資料
+    async function saveEditedItem(event) {
+        event.preventDefault();
+        const firebaseKey = document.getElementById('editFirebaseKey').value;
+        const updatedItem = {
+            title: document.getElementById('editTitle').value,
+            occurredAt: document.getElementById('editOccurredAt').value,
+            type: document.getElementById('editType').value,
+            status: document.getElementById('editStatus').value,
+            scriptureRef: document.getElementById('editScriptureRef').value,
+            interpretation: document.getElementById('editInterpretation').value,
+            tags: document.getElementById('editTags').value,
+            content: document.getElementById('editContent').value
+        };
+
+        try {
+            const response = await fetch(`${databaseUrl}/${firebaseKey}.json`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedItem)
+            });
+
+            if (response.ok) {
+                alert("修改成功！");
+                closeEditModal();
+                fetchDreams();
+            } else {
+                alert("修改失敗");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("修改發生錯誤");
+        }
+    }
+
     // 渲染卡片
     function renderDreams(items) {
         const cardList = document.getElementById('cardList');
@@ -575,14 +760,17 @@
         }
 
         cardList.innerHTML = items.map(item => {
-            // 經文連結
             const scriptureHtml = item.scriptureRef 
                 ? `<a href="https://www.google.com/search?q=聖經+${encodeURIComponent(item.scriptureRef)}" target="_blank" class="web-link">📖 ${item.scriptureRef}</a>` 
                 : '';
 
-            // 網路新聞與相關文章查詢按鈕
             const searchQuery = item.title || (item.content ? item.content.substring(0, 15) : '');
             const webSearchHtml = searchQuery ? `<a href="https://www.google.com/search?q=${encodeURIComponent(searchQuery)}" target="_blank" class="web-link">🌐 網路新聞/文章查詢</a>` : '';
+
+            // 限制摘要顯示長度，點擊標題看全文
+            const previewContent = item.content && item.content.length > 100 
+                ? item.content.substring(0, 100) + '...' 
+                : (item.content || '');
 
             return `
                 <div class="card">
@@ -590,8 +778,8 @@
                         <span>📅 ${item.occurredAt || '未知日期'}</span>
                         <span>🏷️ ${item.type || '未分類'} | 狀態: ${item.status || '未設定'}</span>
                     </div>
-                    <h3 class="card-title">${item.title || '無標題'}</h3>
-                    <div class="card-content">${item.content || ''}</div>
+                    <h3 class="card-title" onclick="viewDetail('${item.firebaseKey}')" title="點擊檢視全文">${item.title || '無標題'}</h3>
+                    <div class="card-content">${previewContent}</div>
                     ${item.interpretation ? `<div style="font-size: 14px; color: #555; background: #f9f9f9; padding: 8px; border-radius: 4px; margin-bottom: 8px;"><strong>💡 領受與解讀：</strong>${item.interpretation}</div>` : ''}
                     ${item.tags ? `<div style="font-size: 12px; color: #0066cc; margin-bottom: 8px;">#${item.tags.replace(/,/g, ' #')}</div>` : ''}
                     
@@ -601,7 +789,7 @@
                             ${webSearchHtml}
                         </div>
                         <div class="action-btns">
-                            <button class="btn-edit" onclick="editItem('${item.firebaseKey}')">修改</button>
+                            <button class="btn-edit" onclick="openEditModal('${item.firebaseKey}')">修改</button>
                             <button class="btn-delete" onclick="deleteItem('${item.firebaseKey}')">刪除</button>
                         </div>
                     </div>
@@ -627,43 +815,6 @@
         } catch (error) {
             console.error(error);
             alert("刪除發生錯誤");
-        }
-    }
-
-    // 修改功能
-    async function editItem(firebaseKey) {
-        const item = originalData.find(d => d.firebaseKey === firebaseKey);
-        if (!item) return;
-
-        const newTitle = prompt("修改標題：", item.title || "");
-        if (newTitle === null) return;
-
-        const newContent = prompt("修改內文：", item.content || "");
-        if (newContent === null) return;
-
-        const updatedData = {
-            ...item,
-            title: newTitle,
-            content: newContent
-        };
-        delete updatedData.firebaseKey;
-
-        try {
-            const response = await fetch(`${databaseUrl}/${firebaseKey}.json`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedData)
-            });
-
-            if (response.ok) {
-                alert("修改成功！");
-                fetchDreams();
-            } else {
-                alert("修改失敗");
-            }
-        } catch (error) {
-            console.error(error);
-            alert("修改發生錯誤");
         }
     }
 
