@@ -85,15 +85,31 @@
             background: #e2e8f0;
             border-color: #cbd5e1;
         }
-        /* 搜尋列與分類按鈕 */
+        /* 搜尋列與排序控制列 */
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
         .search-bar {
-            width: 100%;
+            flex: 1;
             padding: 10px 14px;
             font-size: 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
-            margin-bottom: 15px;
             box-sizing: border-box;
+            min-width: 220px;
+        }
+        .sort-select {
+            padding: 10px 12px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            color: #333;
         }
         .category-filters {
             display: flex;
@@ -300,8 +316,14 @@
         </div>
     </div>
 
-    <!-- 關鍵字搜尋輸入框 -->
-    <input type="text" id="searchInput" class="search-bar" placeholder="🔍 輸入關鍵字搜尋標題、內容、經文或標籤..." oninput="filterData()">
+    <!-- 搜尋列與排序控制列 -->
+    <div class="controls-row">
+        <input type="text" id="searchInput" class="search-bar" placeholder="🔍 輸入關鍵字搜尋標題、內容、經文或標籤..." oninput="filterData()">
+        <select id="sortOrder" class="sort-select" onchange="filterData()">
+            <option value="newest">📅 最新日期優先</option>
+            <option value="oldest">📅 最早日期優先</option>
+        </select>
+    </div>
 
     <!-- 分類過濾按鈕區塊 -->
     <div class="category-filters" id="categoryFilters">
@@ -557,9 +579,10 @@
         filterData();
     }
 
-    // 篩選與搜尋整合邏輯
+    // 篩選、搜尋與排序整合邏輯
     function filterData() {
         const keyword = document.getElementById('searchInput').value.toLowerCase();
+        const sortOrder = document.getElementById('sortOrder').value;
 
         let filtered = originalData.filter(item => {
             // 分類篩選
@@ -587,6 +610,17 @@
             }
 
             return matchCategory && matchTag && matchKeyword;
+        });
+
+        // 依據選擇的日期排序 (最新/最早優先)
+        filtered.sort((a, b) => {
+            const dateA = new Date(a.occurredAt || '1970-01-01');
+            const dateB = new Date(b.occurredAt || '1970-01-01');
+            if (sortOrder === 'newest') {
+                return dateB - dateA; // 新到舊
+            } else {
+                return dateA - dateB; // 舊到新
+            }
         });
 
         renderDreams(filtered);
@@ -767,7 +801,6 @@
             const searchQuery = item.title || (item.content ? item.content.substring(0, 15) : '');
             const webSearchHtml = searchQuery ? `<a href="https://www.google.com/search?q=${encodeURIComponent(searchQuery)}" target="_blank" class="web-link">🌐 網路新聞/文章查詢</a>` : '';
 
-            // 限制摘要顯示長度，點擊標題看全文
             const previewContent = item.content && item.content.length > 100 
                 ? item.content.substring(0, 100) + '...' 
                 : (item.content || '');
