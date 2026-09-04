@@ -361,7 +361,7 @@
             </div>
             <div class="form-group">
                 <label>領受者：</label>
-                <input type="text" id="addRecipient" placeholder="請輸入領受者姓名">
+                <input type="text" id="addRecipient" value="Ibu" placeholder="請輸入領受者姓名">
             </div>
             <div class="form-group">
                 <label>分類類型：</label>
@@ -390,6 +390,10 @@
                 <textarea id="addInterpretation" rows="2" placeholder="請輸入領受與解讀"></textarea>
             </div>
             <div class="form-group">
+                <label>照片/影片連結：</label>
+                <input type="text" id="addMediaUrl" placeholder="請輸入圖片網址或 YouTube 影片連結">
+            </div>
+            <div class="form-group">
                 <label>標籤 (用逗號或空格分隔)：</label>
                 <input type="text" id="addTags" placeholder="例如：恩賜, 復興, 異象">
             </div>
@@ -414,6 +418,7 @@
         <div class="detail-row"><b>🏷️ 類型與狀態：</b><span id="detailTypeStatus"></span></div>
         <div class="detail-row" id="detailScriptureContainer"><b>📖 經文參考：</b><span id="detailScripture"></span></div>
         <div class="detail-row" id="detailInterpContainer"><b>💡 領受與解讀：</b><div id="detailInterp" style="background: #f9f9f9; padding: 8px; border-radius: 4px; margin-top: 4px;"></div></div>
+        <div class="detail-row" id="detailMediaContainer" style="display: none;"><b>🖼️ 附件媒體：</b><div id="detailMedia" style="margin-top: 6px;"></div></div>
         <div class="detail-row" id="detailTagsContainer"><b># 標籤：</b><span id="detailTags" style="color: #0066cc;"></span></div>
         <div class="detail-row" style="margin-top: 15px;">
             <b>📄 詳細內文：</b>
@@ -468,6 +473,10 @@
             <div class="form-group">
                 <label>領受與解讀：</label>
                 <textarea id="editInterpretation" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label>照片/影片連結：</label>
+                <input type="text" id="editMediaUrl" placeholder="請輸入圖片網址或 YouTube 影片連結">
             </div>
             <div class="form-group">
                 <label>標籤 (用逗號或空格分隔)：</label>
@@ -676,6 +685,7 @@
             status: document.getElementById('addStatus').value,
             scriptureRef: document.getElementById('addScriptureRef').value,
             interpretation: document.getElementById('addInterpretation').value,
+            mediaUrl: document.getElementById('addMediaUrl').value,
             tags: document.getElementById('addTags').value,
             content: document.getElementById('addContent').value
         };
@@ -698,6 +708,22 @@
             console.error(error);
             alert("發生錯誤");
         }
+    }
+
+    function formatMediaHtml(url) {
+        if (!url) return '';
+        if (url.includes('youtube.com') || url.includes('youtu.be')) {
+            let videoId = '';
+            if (url.includes('youtu.be')) {
+                videoId = url.split('/').pop().split('?')[0];
+            } else if (url.includes('v=')) {
+                videoId = url.split('v=')[1]?.substring(0, 11);
+            }
+            if (videoId) {
+                return `<div style="margin-bottom: 10px;"><iframe width="100%" height="220" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen style="border-radius: 6px;"></iframe></div>`;
+            }
+        }
+        return `<div style="margin-bottom: 10px;"><img src="${url}" style="max-width: 100%; max-height: 250px; border-radius: 6px;" alt="媒體附件"></div>`;
     }
 
     function viewDetail(firebaseKey) {
@@ -733,6 +759,14 @@
             interpContainer.style.display = 'none';
         }
 
+        const mediaContainer = document.getElementById('detailMediaContainer');
+        if (item.mediaUrl) {
+            document.getElementById('detailMedia').innerHTML = formatMediaHtml(item.mediaUrl);
+            mediaContainer.style.display = 'block';
+        } else {
+            mediaContainer.style.display = 'none';
+        }
+
         const tagsContainer = document.getElementById('detailTagsContainer');
         if (item.tags) {
             document.getElementById('detailTags').textContent = `#${item.tags.replace(/,/g, ' #')}`;
@@ -761,6 +795,7 @@
         document.getElementById('editStatus').value = item.status || '未設定';
         document.getElementById('editScriptureRef').value = item.scriptureRef || '';
         document.getElementById('editInterpretation').value = item.interpretation || '';
+        document.getElementById('editMediaUrl').value = item.mediaUrl || '';
         document.getElementById('editTags').value = item.tags || '';
         document.getElementById('editContent').value = item.content || '';
 
@@ -783,6 +818,7 @@
             status: document.getElementById('editStatus').value,
             scriptureRef: document.getElementById('editScriptureRef').value,
             interpretation: document.getElementById('editInterpretation').value,
+            mediaUrl: document.getElementById('editMediaUrl').value,
             tags: document.getElementById('editTags').value,
             content: document.getElementById('editContent').value
         };
@@ -828,6 +864,7 @@
 
             const recipientHeaderHtml = item.recipient ? ` | 領受者: ${item.recipient}` : '';
             const recipientBottomHtml = item.recipient ? `<div style="font-size: 13px; color: #555; margin-bottom: 8px;"><strong>👤 領受者：</strong>${item.recipient}</div>` : '';
+            const mediaHtml = item.mediaUrl ? formatMediaHtml(item.mediaUrl) : '';
 
             return `
                 <div class="card">
@@ -836,6 +873,7 @@
                         <span>🏷️ ${item.type || '未分類'} | 狀態: ${item.status || '未設定'}</span>
                     </div>
                     <h3 class="card-title" onclick="viewDetail('${item.firebaseKey}')" title="點擊檢視全文">${item.title || '無標題'}</h3>
+                    ${mediaHtml}
                     <div class="card-content">${previewContent}</div>
                     ${item.interpretation ? `<div style="font-size: 14px; color: #555; background: #f9f9f9; padding: 8px; border-radius: 4px; margin-bottom: 8px;"><strong>💡 領受與解讀：</strong>${item.interpretation}</div>` : ''}
                     ${recipientBottomHtml}
