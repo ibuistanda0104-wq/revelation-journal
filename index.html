@@ -390,8 +390,12 @@
                 <textarea id="addInterpretation" rows="2" placeholder="請輸入領受與解讀"></textarea>
             </div>
             <div class="form-group">
-                <label>照片/影片連結：</label>
-                <input type="text" id="addMediaUrl" placeholder="請輸入圖片網址或 YouTube 影片連結">
+                <label>📷 上傳照片（從相簿選取）：</label>
+                <input type="file" id="addImageFile" accept="image/*" onchange="convertImageToBase64(this, 'addMediaUrl')">
+            </div>
+            <div class="form-group">
+                <label>🔗 或輸入 YouTube 影片網址 / 圖片網址：</label>
+                <input type="text" id="addMediaUrl" placeholder="貼上 YouTube 網址或圖片網址">
             </div>
             <div class="form-group">
                 <label>標籤 (用逗號或空格分隔)：</label>
@@ -475,7 +479,11 @@
                 <textarea id="editInterpretation" rows="2"></textarea>
             </div>
             <div class="form-group">
-                <label>照片/影片連結：</label>
+                <label>📷 更換照片（從相簿選取）：</label>
+                <input type="file" id="editImageFile" accept="image/*" onchange="convertImageToBase64(this, 'editMediaUrl')">
+            </div>
+            <div class="form-group">
+                <label>🔗 媒體連結（YouTube 或網址）：</label>
                 <input type="text" id="editMediaUrl" placeholder="請輸入圖片網址或 YouTube 影片連結">
             </div>
             <div class="form-group">
@@ -499,6 +507,19 @@
     let currentCategory = '全部';
     let currentTag = '';
     const databaseUrl = "https://revelation-sync-default-rtdb.firebaseio.com/";
+
+    // 處理圖片上傳並自動轉為 Base64 字串
+    function convertImageToBase64(input, targetId) {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById(targetId).value = e.target.result;
+                alert("📷 照片載入成功！");
+            };
+            reader.readAsDataURL(file);
+        }
+    }
 
     // 智慧雙向掃描：自動抓取根目錄與容器內的所有記錄
     async function fetchDreams() {
@@ -723,7 +744,7 @@
                 return `<div style="margin-bottom: 10px;"><iframe width="100%" height="220" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen style="border-radius: 6px;"></iframe></div>`;
             }
         }
-        return `<div style="margin-bottom: 10px;"><img src="${url}" style="max-width: 100%; max-height: 250px; border-radius: 6px;" alt="媒體附件"></div>`;
+        return `<div style="margin-bottom: 10px;"><img src="${url}" style="max-width: 100%; max-height: 250px; border-radius: 6px;" alt="附件圖片"></div>`;
     }
 
     function viewDetail(firebaseKey) {
