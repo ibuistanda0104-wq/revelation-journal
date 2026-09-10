@@ -546,7 +546,7 @@
             </div>
             <div class="form-group">
                 <label>詳細內文：</label>
-                <textarea id="addContent" rows="4" required placeholder="請輸入詳細夢境或異象內文..." oninput="checkKeywordSuggestion('addContent', 'addScriptureRef')"></textarea>
+                <textarea id="addContent" rows="4" required placeholder="請輸入詳細夢境或異象內文..."></textarea>
             </div>
             <div style="text-align: right; margin-top: 15px; display: flex; justify-content: flex-end; gap: 8px;">
                 <button type="button" onclick="closeAddModal()" style="padding: 8px 16px; background: #ddd; border: none; border-radius: 6px; cursor: pointer;">取消</button>
@@ -572,6 +572,13 @@
             <div class="form-group">
                 <label>代禱項目：</label>
                 <input type="text" id="addPrayerItem" required placeholder="例如：為家人代禱 / 職場突破">
+            </div>
+            <div class="form-group">
+                <label>經文參考：</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="addPrayerScriptureRef" placeholder="例如：羅馬書 8:28" style="flex: 1;">
+                    <button type="button" class="btn-warning" onclick="suggestScripture('addPrayerContent', 'addPrayerScriptureRef')">💡 智慧推薦</button>
+                </div>
             </div>
             <div class="form-group">
                 <label>相關內容：</label>
@@ -604,6 +611,13 @@
                 <input type="text" id="editPrayerItem" required>
             </div>
             <div class="form-group">
+                <label>經文參考：</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="editPrayerScriptureRef" style="flex: 1;">
+                    <button type="button" class="btn-warning" onclick="suggestScripture('editPrayerContent', 'editPrayerScriptureRef')">💡 智慧推薦</button>
+                </div>
+            </div>
+            <div class="form-group">
                 <label>相關內容：</label>
                 <textarea id="editPrayerContent" rows="4" required></textarea>
             </div>
@@ -621,6 +635,7 @@
         <h3 id="prayerDetailTitle" style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;"></h3>
         <div class="detail-row"><b>📅 日期時間：</b><span id="prayerDetailDate"></span></div>
         <div class="detail-row"><b>🙏 代禱項目：</b><span id="prayerDetailItem"></span></div>
+        <div class="detail-row" id="prayerDetailScriptureContainer" style="display: none;"><b>📖 經文參考：</b><span id="prayerDetailScripture"></span></div>
         <div class="detail-row" style="margin-top: 15px;">
             <b>📄 詳細內容：</b>
             <div id="prayerDetailContent" style="background: #f9f9f9; padding: 12px; border-radius: 6px; white-space: pre-wrap; margin-top: 6px; line-height: 1.6;"></div>
@@ -696,7 +711,10 @@
             </div>
             <div class="form-group">
                 <label>經文參考：</label>
-                <input type="text" id="editScriptureRef">
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="editScriptureRef" style="flex: 1;">
+                    <button type="button" class="btn-warning" onclick="suggestScripture('editContent', 'editScriptureRef')">💡 智慧推薦</button>
+                </div>
             </div>
             <div class="form-group">
                 <label>領受與解讀：</label>
@@ -883,12 +901,10 @@
         "信心": "希伯來書 11:1 - 信就是所望之事的實底，是未見之事的確據",
         "愛": "哥林多前書 13:4 - 愛是恆久忍耐，又有恩慈",
         "亮光": "詩篇 119:105 - 你的話是我腳前的燈，是我路上的光",
-        "力量": "以賽亞書 40:31 - 但那等候耶和華的必從新得力"
+        "力量": "以賽亞書 40:31 - 但那等候耶和華的必從新得力",
+        "家庭": "約書亞記 24:15 - 至於我和我家，我們必定事奉耶和華",
+        "職場": "歌羅西書 3:23 - 無論做什麼，都要從心里做，像是給主做的"
     };
-
-    function checkKeywordSuggestion(contentId, scriptureId) {
-        // 可選：輸入時自動比對
-    }
 
     function suggestScripture(contentId, scriptureId) {
         const text = document.getElementById(contentId).value;
@@ -902,7 +918,7 @@
             document.getElementById(scriptureId).value = found.join("；");
             alert(`💡 智慧推薦經文：\n${found.join("\n")}`);
         } else {
-            alert("未在內文中偵測到對應的關鍵字（如：恩典、復興、平安、道路、信心等）。");
+            alert("未在內文中偵測到對應的關鍵字（如：恩典、復興、平安、道路、家庭等）。");
         }
     }
 
@@ -942,6 +958,21 @@
                     }
                 });
 
+                // 自動初始化預設電子書（如果書櫃為空）
+                if (extractedBooks.length === 0) {
+                    const defaultBook = {
+                        title: "數位刊物第一冊（Time for Taiwan）",
+                        description: "收錄時間與地區相關的數位出版與異象內容。",
+                        url: "https://online.fliphtml5.com/timefortaiwan/azpb/#p=1"
+                    };
+                    await fetch(`${databaseUrl}/bookshelf.json`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(defaultBook)
+                    });
+                    extractedBooks.push({ bookKey: 'default_init', ...defaultBook });
+                }
+
                 originalData = extractedItems;
                 booksData = extractedBooks;
                 updateStatsAndTags();
@@ -949,9 +980,21 @@
                 filterPrayers();
                 renderBookShelfList();
             } else {
+                // 如果整顆資料庫完全是空的，自動初始化預設書本
+                const defaultBook = {
+                    title: "數位刊物第一冊（Time for Taiwan）",
+                    description: "收錄時間與地區相關的數位出版與異象內容。",
+                    url: "https://online.fliphtml5.com/timefortaiwan/azpb/#p=1"
+                };
+                await fetch(`${databaseUrl}/bookshelf.json`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(defaultBook)
+                });
+                booksData = [{ bookKey: 'default_init', ...defaultBook }];
                 originalData = [];
-                booksData = [];
                 cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">目前沒有資料</div>`;
+                renderBookShelfList();
             }
         } catch (error) {
             console.error(error);
@@ -1191,7 +1234,8 @@
             if (!keyword) return true;
             return (item.title && item.title.toLowerCase().includes(keyword)) ||
                    (item.prayerItem && item.prayerItem.toLowerCase().includes(keyword)) ||
-                   (item.content && item.content.toLowerCase().includes(keyword));
+                   (item.content && item.content.toLowerCase().includes(keyword)) ||
+                   (item.scriptureRef && item.scriptureRef.toLowerCase().includes(keyword));
         });
 
         prayers.sort((a, b) => new Date(b.occurredAt || '1970-01-01') - new Date(a.occurredAt || '1970-01-01'));
@@ -1260,6 +1304,14 @@
         document.getElementById('prayerDetailItem').textContent = item.prayerItem || '未分類';
         document.getElementById('prayerDetailContent').textContent = item.content || '（無內容）';
 
+        const scriptureContainer = document.getElementById('prayerDetailScriptureContainer');
+        if (item.scriptureRef) {
+            document.getElementById('prayerDetailScripture').innerHTML = `<a href="https://www.google.com/search?q=聖經+${encodeURIComponent(item.scriptureRef)}" target="_blank" class="web-link">📖 ${item.scriptureRef}</a>`;
+            scriptureContainer.style.display = 'block';
+        } else {
+            scriptureContainer.style.display = 'none';
+        }
+
         const relatedContainer = document.getElementById('prayerRelatedRevelations');
         let relatedItems = originalData.filter(d => {
             if (d.type === '代禱') return false;
@@ -1298,6 +1350,7 @@
         }
         document.getElementById('editPrayerTopic').value = item.title || '';
         document.getElementById('editPrayerItem').value = item.prayerItem || '';
+        document.getElementById('editPrayerScriptureRef').value = item.scriptureRef || '';
         document.getElementById('editPrayerContent').value = item.content || '';
 
         document.getElementById('editPrayerModal').style.display = 'flex';
@@ -1315,6 +1368,7 @@
             occurredAt: document.getElementById('editPrayerDateTime').value.replace('T', ' '),
             title: document.getElementById('editPrayerTopic').value,
             prayerItem: document.getElementById('editPrayerItem').value,
+            scriptureRef: document.getElementById('editPrayerScriptureRef').value,
             content: document.getElementById('editPrayerContent').value
         };
 
@@ -1380,6 +1434,7 @@
             occurredAt: document.getElementById('addPrayerDateTime').value.replace('T', ' '),
             title: document.getElementById('addPrayerTopic').value,
             prayerItem: document.getElementById('addPrayerItem').value,
+            scriptureRef: document.getElementById('addPrayerScriptureRef').value,
             content: document.getElementById('addPrayerContent').value
         };
 
