@@ -925,7 +925,7 @@
                         <span>🙏 代禱項目：<b>${item.prayerItem || '未分類'}</b></span>
                     </div>
                     <h3 class="card-title" onclick="viewPrayerDetail('${item.firebaseKey}')" title="點擊檢視全文">📌 主題：${item.title || '無主題'}</h3>
-                    <div class="card-content">${previewContent}</div>
+                    <div class="card-content" onclick="viewPrayerDetail('${item.firebaseKey}')" style="cursor: pointer;" title="點擊檢視全文">${previewContent}</div>
                     <div class="card-footer">
                         <span style="font-size: 12px; color: #888;">ID: ${item.firebaseKey}</span>
                         <div class="action-btns">
