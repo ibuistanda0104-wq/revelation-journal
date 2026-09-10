@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>異象與啟示記錄系統</title>
+    <title>神國拼圖紀錄與代禱系統</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4a90e2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="神國拼圖">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -20,7 +26,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             flex-wrap: wrap;
             gap: 10px;
         }
@@ -31,6 +37,7 @@
         .header-btns {
             display: flex;
             gap: 8px;
+            flex-wrap: wrap;
         }
         .btn-primary {
             background-color: #4a90e2;
@@ -55,6 +62,55 @@
         }
         .btn-success:hover {
             background-color: #218838;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .btn-info {
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-info:hover {
+            background-color: #138496;
+        }
+        /* 分頁切換列 */
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #e2e8f0;
+            color: #444;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.2s;
+            text-align: center;
+            min-width: 140px;
+        }
+        .tab-btn.active {
+            background: #4a90e2;
+            color: white;
         }
         /* 統計資訊面板 */
         .stats-panel {
@@ -131,7 +187,7 @@
             color: white;
             border-color: #4a90e2;
         }
-        /* 熱門關鍵字標籤雲 (前10個) */
+        /* 熱門關鍵字標籤雲 */
         .tag-cloud {
             background: white;
             padding: 12px 15px;
@@ -295,69 +351,82 @@
 
 <div class="container">
     <header>
-        <h1>☁️ 異象與啟示記錄系統</h1>
+        <h1>☁️ 神國拼圖紀錄與代禱系統</h1>
         <div class="header-btns">
-            <button class="btn-success" onclick="openAddModal()">➕ 新增記錄</button>
+            <button class="btn-info" onclick="openBookShelf()">📚 電子書櫃</button>
             <button class="btn-primary" onclick="fetchDreams()">☁️ 同步資料</button>
         </div>
     </header>
 
-    <!-- 統計資訊面板 -->
-    <div class="stats-panel">
-        <strong>📊 紀錄分類統計概況（點擊項目可快速篩選檢視）</strong>
-        <div class="stats-grid" id="statsGrid">
-            <span class="stats-badge">載入中...</span>
+    <!-- 分頁導覽列 -->
+    <div class="nav-tabs">
+        <button class="tab-btn active" id="btnTabRev" onclick="switchTab('revelation')">☁️ 異象與啟示記錄</button>
+        <button class="tab-btn" id="btnTabPrayer" onclick="switchTab('prayer')">🙏 代禱清單</button>
+    </div>
+
+    <!-- ================= 頁面一：異象與啟示記錄 ================= -->
+    <div id="viewRevelation">
+        <!-- 統計資訊面板 -->
+        <div class="stats-panel">
+            <strong>📊 紀錄分類統計概況（點擊項目可快速篩選檢視）</strong>
+            <div class="stats-grid" id="statsGrid">
+                <span class="stats-badge">載入中...</span>
+            </div>
+        </div>
+
+        <!-- 關鍵字熱門列表 (前10個) -->
+        <div class="tag-cloud">
+            <div class="tag-cloud-title">🏷️ 熱門關鍵字列表（前 10 名，點擊可直接檢視對應記錄）</div>
+            <div class="tag-chips" id="tagChips">
+                <span style="color: #888; font-size: 13px;">載入後顯示關鍵字...</span>
+            </div>
+        </div>
+
+        <!-- 搜尋列與排序控制列 -->
+        <div class="controls-row">
+            <input type="text" id="searchInput" class="search-bar" placeholder="🔍 輸入關鍵字搜尋標題、內容、經文、領受者或標籤..." oninput="filterData()">
+            <select id="sortOrder" class="sort-select" onchange="filterData()">
+                <option value="newest">📅 最新日期優先</option>
+                <option value="oldest">📅 最早日期優先</option>
+            </select>
+            <button class="btn-success" onclick="openAddModal()">➕ 新增記錄</button>
+        </div>
+
+        <!-- 分類過濾按鈕區塊 -->
+        <div class="category-filters" id="categoryFilters">
+            <button class="filter-btn active" onclick="setCategory('全部', this)">全部</button>
+            <button class="filter-btn" onclick="setCategory('異夢', this)">異夢</button>
+            <button class="filter-btn" onclick="setCategory('異象', this)">異象</button>
+            <button class="filter-btn" onclick="setCategory('啟示', this)">啟示</button>
+            <button class="filter-btn" onclick="setCategory('禱告查驗', this)">禱告查驗</button>
+            <button class="filter-btn" onclick="setCategory('已獲印證', this)">已獲印證</button>
+            <button class="filter-btn" onclick="setCategory('已完全成就', this)">已完全成就</button>
+        </div>
+
+        <!-- 資料顯示可滾動清單區域 -->
+        <div class="scrollable-card-container">
+            <div id="cardList" class="card-list">
+                <div style="text-align: center; color: #888; padding: 40px;">請點擊右上角「同步資料」載入記錄</div>
+            </div>
         </div>
     </div>
 
-    <!-- 關鍵字熱門列表 (前10個) -->
-    <div class="tag-cloud">
-        <div class="tag-cloud-title">🏷️ 熱門關鍵字列表（前 10 名，點擊可直接檢視對應夢境）</div>
-        <div class="tag-chips" id="tagChips">
-            <span style="color: #888; font-size: 13px;">載入後顯示關鍵字...</span>
+    <!-- ================= 頁面二：代禱清單 ================= -->
+    <div id="viewPrayer" style="display: none;">
+        <div class="controls-row">
+            <input type="text" id="searchPrayerInput" class="search-bar" placeholder="🔍 搜尋代禱主題、項目或相關內容..." oninput="filterPrayers()">
+            <button class="btn-success" onclick="openAddPrayerModal()">🙏 新增代禱項目</button>
         </div>
-    </div>
 
-    <!-- 搜尋列與排序控制列 -->
-    <div class="controls-row">
-        <input type="text" id="searchInput" class="search-bar" placeholder="🔍 輸入關鍵字搜尋標題、內容、經文、領受者或標籤..." oninput="filterData()">
-        <select id="sortOrder" class="sort-select" onchange="filterData()">
-            <option value="newest">📅 最新日期優先</option>
-            <option value="oldest">📅 最早日期優先</option>
-        </select>
-    </div>
-
-    <!-- 分類過濾按鈕區塊 -->
-    <div class="category-filters" id="categoryFilters">
-        <button class="filter-btn active" onclick="setCategory('全部', this)">全部</button>
-        <button class="filter-btn" onclick="setCategory('異夢', this)">異夢</button>
-        <button class="filter-btn" onclick="setCategory('異象', this)">異象</button>
-        <button class="filter-btn" onclick="setCategory('啟示', this)">啟示</button>
-        <button class="filter-btn" onclick="setCategory('禱告查驗', this)">禱告查驗</button>
-        <button class="filter-btn" onclick="setCategory('已獲印證', this)">已獲印證</button>
-        <button class="filter-btn" onclick="setCategory('已完全成就', this)">已完全成就</button>
-    </div>
-
-    <!-- 數位刊物內嵌預覽區塊 -->
-    <div style="background: white; padding: 16px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h3 style="margin: 0; font-size: 16px; color: #2c3e50;">📖 數位刊物線上翻閱</h3>
-            <a href="https://online.fliphtml5.com/timefortaiwan/azpb/#p=1" target="_blank" style="font-size: 13px; color: #0066cc; text-decoration: none;">🔗 全螢幕新視窗開啟</a>
-        </div>
-        <div style="width: 100%; height: 450px; border-radius: 6px; overflow: hidden; border: 1px solid #e1e8ed;">
-            <iframe src="https://online.fliphtml5.com/timefortaiwan/azpb/#p=1" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>
-        </div>
-    </div>
-
-    <!-- 資料顯示可滾動清單區域 -->
-    <div class="scrollable-card-container">
-        <div id="cardList" class="card-list">
-            <div style="text-align: center; color: #888; padding: 40px;">請點擊右上角「同步資料」載入記錄</div>
+        <div class="scrollable-card-container">
+            <div id="prayerCardList" class="card-list">
+                <div style="text-align: center; color: #888; padding: 40px;">目前沒有代禱項目</div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- 新增記錄彈跳視窗 -->
+<!-- 新增異象/啟示記錄彈跳視窗 -->
 <div id="addModal" class="modal-overlay">
     <div class="modal-content">
         <h3 style="margin-top: 0; color: #2c3e50;">✨ 新增異象/異夢/啟示記錄</h3>
@@ -424,7 +493,36 @@
     </div>
 </div>
 
-<!-- 完整內容檢視彈跳視窗 -->
+<!-- 新增代禱項目彈跳視窗 -->
+<div id="addPrayerModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 style="margin-top: 0; color: #2c3e50;">🙏 新增代禱項目</h3>
+        <form id="addPrayerForm" onsubmit="saveNewPrayer(event)">
+            <div class="form-group">
+                <label>日期時間：</label>
+                <input type="datetime-local" id="addPrayerDateTime" required>
+            </div>
+            <div class="form-group">
+                <label>代禱主題：</label>
+                <input type="text" id="addPrayerTopic" required placeholder="例如：家庭復興與健康">
+            </div>
+            <div class="form-group">
+                <label>代禱項目：</label>
+                <input type="text" id="addPrayerItem" required placeholder="例如：為家人代禱 / 職場突破">
+            </div>
+            <div class="form-group">
+                <label>相關內容：</label>
+                <textarea id="addPrayerContent" rows="4" required placeholder="請輸入代禱事項的詳細說明、相關經文或感動..."></textarea>
+            </div>
+            <div style="text-align: right; margin-top: 15px; display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" onclick="closeAddPrayerModal()" style="padding: 8px 16px; background: #ddd; border: none; border-radius: 6px; cursor: pointer;">取消</button>
+                <button type="submit" class="btn-primary" style="padding: 8px 16px;">儲存代禱</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 完整內容檢視彈跳視窗 (啟示記錄) -->
 <div id="detailModal" class="modal-overlay">
     <div class="modal-content">
         <h3 id="detailTitle" style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;"></h3>
@@ -445,7 +543,7 @@
     </div>
 </div>
 
-<!-- 修改記錄完整彈跳視窗 -->
+<!-- 修改記錄彈跳視窗 -->
 <div id="editModal" class="modal-overlay">
     <div class="modal-content">
         <h3 style="margin-top: 0; color: #2c3e50;">✏️ 修改記錄資料</h3>
@@ -513,11 +611,67 @@
     </div>
 </div>
 
+<!-- 電子書櫃彈跳視窗 -->
+<div id="bookShelfModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 700px;">
+        <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;">📚 數位刊物電子書櫃</h3>
+        <p style="font-size: 13px; color: #666;">這裡收錄了所有上架的數位刊物與電子書，點擊即可線上翻閱：</p>
+        
+        <div style="display: flex; flex-direction: column; gap: 12px; max-height: 60vh; overflow-y: auto; margin-top: 15px;">
+            <div style="background: #f9f9f9; padding: 12px 16px; border-radius: 8px; border: 1px solid #e1e8ed; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h4 style="margin: 0 0 4px 0; color: #0066cc;">📖 數位刊物第一冊（Time for Taiwan）</h4>
+                    <p style="margin: 0; font-size: 13px; color: #555;">收錄時間與地區相關的數位出版與異象內容。</p>
+                </div>
+                <button class="btn-primary" onclick="openBookViewer('https://online.fliphtml5.com/timefortaiwan/azpb/#p=1', '數位刊物第一冊')">立即翻閱</button>
+            </div>
+        </div>
+
+        <div style="text-align: right; margin-top: 20px;">
+            <button type="button" onclick="closeBookShelf()" class="btn-secondary">關閉書櫃</button>
+        </div>
+    </div>
+</div>
+
+<!-- 獨立書本閱讀器彈跳視窗 -->
+<div id="bookViewerModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 900px; width: 95%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 id="bookViewerTitle" style="margin: 0; color: #2c3e50;">📖 閱讀電子書</h3>
+            <button type="button" onclick="closeBookViewer()" style="border: none; background: #ddd; padding: 4px 10px; border-radius: 4px; cursor: pointer;">✕ 關閉</button>
+        </div>
+        <div style="width: 100%; height: 70vh; border-radius: 6px; overflow: hidden; border: 1px solid #ddd;">
+            <iframe id="bookIframe" src="" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>
+        </div>
+    </div>
+</div>
+
 <script>
     let originalData = [];
     let currentCategory = '全部';
     let currentTag = '';
     const databaseUrl = "https://revelation-sync-default-rtdb.firebaseio.com/";
+
+    // 分頁切換功能
+    function switchTab(tabName) {
+        const revView = document.getElementById('viewRevelation');
+        const prayView = document.getElementById('viewPrayer');
+        const btnRev = document.getElementById('btnTabRev');
+        const btnPray = document.getElementById('btnTabPrayer');
+
+        if (tabName === 'revelation') {
+            revView.style.display = 'block';
+            prayView.style.display = 'none';
+            btnRev.classList.add('active');
+            btnPray.classList.remove('active');
+        } else {
+            revView.style.display = 'none';
+            prayView.style.display = 'block';
+            btnPray.classList.add('active');
+            btnRev.classList.remove('active');
+            filterPrayers();
+        }
+    }
 
     // 處理圖片上傳並自動轉為 Base64 字串
     function convertImageToBase64(input, targetId) {
@@ -532,7 +686,7 @@
         }
     }
 
-    // 智慧雙向掃描：自動抓取根目錄與容器內的所有記錄
+    // 同步資料
     async function fetchDreams() {
         const cardList = document.getElementById('cardList');
         cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">同步中...</div>`;
@@ -547,12 +701,12 @@
                 Object.keys(data).forEach(rootKey => {
                     let val = data[rootKey];
                     if (val && typeof val === 'object') {
-                        if (val.title) {
+                        if (val.title || val.type === '代禱') {
                             extractedItems.push({ firebaseKey: rootKey, ...val });
                         } else {
                             Object.keys(val).forEach(subKey => {
                                 let subVal = val[subKey];
-                                if (subVal && typeof subVal === 'object' && subVal.title) {
+                                if (subVal && typeof subVal === 'object' && (subVal.title || subVal.type === '代禱')) {
                                     extractedItems.push({ firebaseKey: `${rootKey}/${subKey}`, ...subVal });
                                 }
                             });
@@ -563,9 +717,11 @@
                 originalData = extractedItems;
                 updateStatsAndTags();
                 filterData();
+                filterPrayers();
             } else {
                 originalData = [];
                 cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">目前沒有資料</div>`;
+                document.getElementById('prayerCardList').innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">目前沒有代禱項目</div>`;
             }
         } catch (error) {
             console.error(error);
@@ -573,15 +729,16 @@
         }
     }
 
-    // 計算各分類與前10大熱門關鍵字統計
+    // 計算分類與熱門標籤
     function updateStatsAndTags() {
-        const total = originalData.length;
-        const countDream = originalData.filter(i => i.type && i.type.includes('異夢')).length;
-        const countVision = originalData.filter(i => i.type && i.type.includes('異象')).length;
-        const countRevelation = originalData.filter(i => i.type && i.type.includes('啟示')).length;
-        const countTest = originalData.filter(i => (i.type && i.type.includes('禱告查驗')) || (i.status && i.status.includes('禱告查驗'))).length;
-        const countVerify = originalData.filter(i => (i.type && i.type.includes('已獲印證')) || (i.status && i.status.includes('已獲印證'))).length;
-        const countFulfilled = originalData.filter(i => (i.type && i.type.includes('已完全成就')) || (i.status && i.status.includes('已完全成就'))).length;
+        const revelations = originalData.filter(i => i.type !== '代禱');
+        const total = revelations.length;
+        const countDream = revelations.filter(i => i.type && i.type.includes('異夢')).length;
+        const countVision = revelations.filter(i => i.type && i.type.includes('異象')).length;
+        const countRevelation = revelations.filter(i => i.type && i.type.includes('啟示')).length;
+        const countTest = revelations.filter(i => (i.type && i.type.includes('禱告查驗')) || (i.status && i.status.includes('禱告查驗'))).length;
+        const countVerify = revelations.filter(i => (i.type && i.type.includes('已獲印證')) || (i.status && i.status.includes('已獲印證'))).length;
+        const countFulfilled = revelations.filter(i => (i.type && i.type.includes('已完全成就')) || (i.status && i.status.includes('已完全成就'))).length;
 
         document.getElementById('statsGrid').innerHTML = `
             <span class="stats-badge" onclick="setCategory('全部', null)">總筆數：<b>${total}</b></span>
@@ -604,7 +761,7 @@
         `;
 
         const tagMap = {};
-        originalData.forEach(item => {
+        revelations.forEach(item => {
             if (item.tags) {
                 const tags = item.tags.split(/[,，\s]+/).filter(t => t.trim() !== '');
                 tags.forEach(tag => {
@@ -645,6 +802,8 @@
         const sortOrder = document.getElementById('sortOrder').value;
 
         let filtered = originalData.filter(item => {
+            if (item.type === '代禱') return false; // 排除代禱項目
+
             let matchCategory = true;
             if (currentCategory !== '全部') {
                 matchCategory = (item.type && item.type.includes(currentCategory)) ||
@@ -673,11 +832,7 @@
         filtered.sort((a, b) => {
             const dateA = new Date(a.occurredAt || '1970-01-01');
             const dateB = new Date(b.occurredAt || '1970-01-01');
-            if (sortOrder === 'newest') {
-                return dateB - dateA;
-            } else {
-                return dateA - dateB;
-            }
+            return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
         });
 
         renderDreams(filtered);
@@ -688,14 +843,48 @@
         currentTag = '';
         updateStatsAndTags();
         filterData();
-        
-        document.querySelectorAll('.filter-btn').forEach(b => {
-            if (b.textContent.includes(category)) {
-                b.classList.add('active');
-            } else {
-                b.classList.remove('active');
-            }
+    }
+
+    // 代禱清單篩選與渲染
+    function filterPrayers() {
+        const keyword = document.getElementById('searchPrayerInput').value.toLowerCase();
+        let prayers = originalData.filter(item => {
+            if (item.type !== '代禱') return false;
+            if (!keyword) return true;
+            return (item.title && item.title.toLowerCase().includes(keyword)) ||
+                   (item.prayerItem && item.prayerItem.toLowerCase().includes(keyword)) ||
+                   (item.content && item.content.toLowerCase().includes(keyword));
         });
+
+        prayers.sort((a, b) => new Date(b.occurredAt || '1970-01-01') - new Date(a.occurredAt || '1970-01-01'));
+        renderPrayers(prayers);
+    }
+
+    function renderPrayers(items) {
+        const prayerList = document.getElementById('prayerCardList');
+        if (items.length === 0) {
+            prayerList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">沒有找到符合的代禱項目</div>`;
+            return;
+        }
+
+        prayerList.innerHTML = items.map(item => {
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <span>📅 日期時間：${item.occurredAt || '未知時間'}</span>
+                        <span>🙏 代禱項目：<b>${item.prayerItem || '未分類'}</b></span>
+                    </div>
+                    <h3 class="card-title" style="color: #2c3e50;">📌 主題：${item.title || '無主題'}</h3>
+                    <div class="card-content"><b>相關內容：</b><br>${item.content || ''}</div>
+                    <div class="card-footer">
+                        <span style="font-size: 12px; color: #888;">ID: ${item.firebaseKey}</span>
+                        <div class="action-btns">
+                            <button class="btn-delete" onclick="deleteItem('${item.firebaseKey}')">刪除</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     function openAddModal() {
@@ -705,6 +894,17 @@
     function closeAddModal() {
         document.getElementById('addModal').style.display = 'none';
         document.getElementById('addForm').reset();
+    }
+
+    function openAddPrayerModal() {
+        document.getElementById('addPrayerModal').style.display = 'flex';
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('addPrayerDateTime').value = now.toISOString().slice(0, 16);
+    }
+    function closeAddPrayerModal() {
+        document.getElementById('addPrayerModal').style.display = 'none';
+        document.getElementById('addPrayerForm').reset();
     }
 
     async function saveNewItem(event) {
@@ -732,6 +932,36 @@
             if (response.ok) {
                 alert("新增成功！");
                 closeAddModal();
+                fetchDreams();
+            } else {
+                alert("新增失敗");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("發生錯誤");
+        }
+    }
+
+    async function saveNewPrayer(event) {
+        event.preventDefault();
+        const newPrayer = {
+            type: "代禱",
+            occurredAt: document.getElementById('addPrayerDateTime').value.replace('T', ' '),
+            title: document.getElementById('addPrayerTopic').value,
+            prayerItem: document.getElementById('addPrayerItem').value,
+            content: document.getElementById('addPrayerContent').value
+        };
+
+        try {
+            const response = await fetch(databaseUrl + ".json", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newPrayer)
+            });
+
+            if (response.ok) {
+                alert("代禱項目新增成功！");
+                closeAddPrayerModal();
                 fetchDreams();
             } else {
                 alert("新增失敗");
@@ -943,6 +1173,23 @@
             console.error(error);
             alert("刪除發生錯誤");
         }
+    }
+
+    // 書櫃控制
+    function openBookShelf() {
+        document.getElementById('bookShelfModal').style.display = 'flex';
+    }
+    function closeBookShelf() {
+        document.getElementById('bookShelfModal').style.display = 'none';
+    }
+    function openBookViewer(url, title) {
+        document.getElementById('bookViewerTitle').textContent = `📖 ${title}`;
+        document.getElementById('bookIframe').src = url;
+        document.getElementById('bookViewerModal').style.display = 'flex';
+    }
+    function closeBookViewer() {
+        document.getElementById('bookIframe').src = '';
+        document.getElementById('bookViewerModal').style.display = 'none';
     }
 
     window.onload = function() {
