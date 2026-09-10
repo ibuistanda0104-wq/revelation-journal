@@ -363,7 +363,7 @@
             padding: 24px;
             border-radius: 8px;
             width: 90%;
-            max-width: 550px;
+            max-width: 580px;
             max-height: 90vh;
             overflow-y: auto;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -394,18 +394,17 @@
         .detail-row b {
             color: #2c3e50;
         }
-        .scripture-item {
+        .scripture-card {
             background: #f8f9fa;
             border: 1px solid #e1e8ed;
-            padding: 8px 12px;
+            padding: 10px 14px;
             border-radius: 6px;
-            margin-bottom: 6px;
-            cursor: pointer;
+            margin-bottom: 8px;
             transition: all 0.2s;
         }
-        .scripture-item:hover {
-            background: #e2e8f0;
+        .scripture-card:hover {
             border-color: #cbd5e1;
+            background: #f1f5f9;
         }
     </style>
 </head>
@@ -526,7 +525,7 @@
                 <label>經文參考：</label>
                 <div style="display: flex; gap: 8px;">
                     <input type="text" id="addScriptureRef" placeholder="例如：約翰福音 3:16" style="flex: 1;">
-                    <button type="button" class="btn-warning" onclick="openScriptureModal('addScriptureRef')">💡 智慧推薦</button>
+                    <button type="button" class="btn-warning" onclick="openScriptureSearchModal('addContent', 'addScriptureRef')">📖 智慧經文搜尋庫</button>
                 </div>
             </div>
             <div class="form-group">
@@ -585,7 +584,7 @@
                 <label>經文參考：</label>
                 <div style="display: flex; gap: 8px;">
                     <input type="text" id="addPrayerScriptureRef" placeholder="例如：羅馬書 8:28" style="flex: 1;">
-                    <button type="button" class="btn-warning" onclick="openScriptureModal('addPrayerScriptureRef')">💡 智慧推薦</button>
+                    <button type="button" class="btn-warning" onclick="openScriptureSearchModal('addPrayerContent', 'addPrayerScriptureRef')">📖 智慧經文搜尋庫</button>
                 </div>
             </div>
             <div class="form-group">
@@ -622,7 +621,7 @@
                 <label>經文參考：</label>
                 <div style="display: flex; gap: 8px;">
                     <input type="text" id="editPrayerScriptureRef" style="flex: 1;">
-                    <button type="button" class="btn-warning" onclick="openScriptureModal('editPrayerScriptureRef')">💡 智慧推薦</button>
+                    <button type="button" class="btn-warning" onclick="openScriptureSearchModal('editPrayerContent', 'editPrayerScriptureRef')">📖 智慧經文搜尋庫</button>
                 </div>
             </div>
             <div class="form-group">
@@ -721,7 +720,7 @@
                 <label>經文參考：</label>
                 <div style="display: flex; gap: 8px;">
                     <input type="text" id="editScriptureRef" style="flex: 1;">
-                    <button type="button" class="btn-warning" onclick="openScriptureModal('editScriptureRef')">💡 智慧推薦</button>
+                    <button type="button" class="btn-warning" onclick="openScriptureSearchModal('editContent', 'editScriptureRef')">📖 智慧經文搜尋庫</button>
                 </div>
             </div>
             <div class="form-group">
@@ -752,17 +751,19 @@
     </div>
 </div>
 
-<!-- 💡 互動式經文智慧推薦選擇視窗 -->
-<div id="scriptureModal" class="modal-overlay">
-    <div class="modal-content" style="max-width: 600px;">
+<!-- 📖 智慧經文搜尋庫視窗 -->
+<div id="scriptureSearchModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 650px;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 12px;">
-            <h3 style="margin: 0; color: #2c3e50;">💡 經文智慧推薦與選取</h3>
-            <button type="button" onclick="closeScriptureModal()" style="border: none; background: #ddd; padding: 4px 10px; border-radius: 4px; cursor: pointer;">✕ 關閉</button>
+            <h3 style="margin: 0; color: #2c3e50;">📖 智慧經文搜尋庫與插入工具</h3>
+            <button type="button" onclick="closeScriptureSearchModal()" style="border: none; background: #ddd; padding: 4px 10px; border-radius: 4px; cursor: pointer;">✕ 關閉</button>
         </div>
-        <p style="font-size: 13px; color: #666; margin-top: 0;">點擊下方任一主題經文，即可自動填入欄位中：</p>
-        
-        <div style="max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;" id="scriptureListContainer">
-            <!-- 內容由 JS 動態生成 -->
+        <div class="form-group">
+            <input type="text" id="scriptureKeywordInput" class="search-bar" placeholder="🔍 輸入關鍵字搜尋經文（例如：恩典、平安、異象、信心、力量...）" oninput="filterScriptureLibrary()" style="width: 100%;">
+        </div>
+        <div style="font-size: 13px; color: #666; margin-bottom: 8px;">點擊下方按鈕可直接將經文「填入經文參考」或「附加至文章內容」：</div>
+        <div style="max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;" id="scriptureSearchResultList">
+            <!-- 動態渲染經文結果 -->
         </div>
     </div>
 </div>
@@ -837,45 +838,92 @@
     let audioChunks = [];
     let isRecording = false;
 
-    // 目前正在操作的經文參考輸入框 ID
-    let currentScriptureInputId = '';
+    // 智慧經文庫與目前目標對應
+    let activeContentId = '';
+    let activeScriptureId = '';
 
-    // 經文推薦資料庫
     const scriptureLibrary = [
-        { theme: "恩典與憐憫", verse: "哥林多後書 12:9 - 我的恩典夠你用的，因為我的能力是在人的軟弱上顯得完全。" },
-        { theme: "復興與更新", verse: "詩篇 85:6 - 你不再將我們救活，使你的百姓靠你歡喜嗎？" },
-        { theme: "道路與指引", verse: "箴言 3:5-6 - 你要專心仰賴耶和華，不可倚靠自己的聰明，在你一切所行的事上都要認定他，他必指引你的路。" },
-        { theme: "平安與安慰", verse: "約翰福音 14:27 - 我留下平安給你們，我將我的平安賜給你們。我所賜的，不像世人所賜的；你們心裡不要憂愁，也不要膽怯。" },
-        { theme: "信心與盼望", verse: "希伯來書 11:1 - 信就是所望之事的實底，是未見之事的確據。" },
-        { theme: "愛與包容", verse: "哥林多前書 13:4 - 愛是恆久忍耐，又有恩慈；愛是不嫉妒；愛是不自夸，不張狂。" },
-        { theme: "引導與亮光", verse: "詩篇 119:105 - 你的話是我腳前的燈，是我路上的光。" },
-        { theme: "力量與得勝", verse: "以賽亞書 40:31 - 但那等候耶和華的必從新得力。他們必如鷹展翅上騰；他們奔跑卻不困倦，行走卻不疲乏。" },
-        { theme: "家庭與事奉", verse: "約書亞記 24:15 - 至於我和我家，我們必定事奉耶和華。" },
-        { theme: "職場與智慧", verse: "歌羅西書 3:23 - 無論做什麼，都要從心裡做，像是給主做的，不是給人做的。" },
-        { theme: "力量與剛強", verse: "約書亞記 1:9 - 我豈沒有吩咐你嗎？你當剛強壯膽！不要懼怕，也不要驚惶；因為你無論往哪裡去，耶和華你的神必與你同在。" }
+        { theme: "恩典", ref: "哥林多後書 12:9", text: "我的恩典夠你用的，因為我的能力是在人的軟弱上顯得完全。" },
+        { theme: "復興", ref: "詩篇 85:6", text: "你不再將我們救活，使你的百姓靠你歡喜嗎？" },
+        { theme: "道路", ref: "箴言 3:5-6", text: "你要專心仰賴耶和華，不可倚靠自己的聰明，在你一切所行的事上都要認定他，他必指引你的路。" },
+        { theme: "平安", ref: "約翰福音 14:27", text: "我留下平安給你們，我將我的平安賜給你們。我所賜的，不像世人所賜的；你們心裡不要憂愁，也不要膽怯。" },
+        { theme: "信心", ref: "希伯來書 11:1", text: "信就是所望之事的實底，是未見之事的確據。" },
+        { theme: "愛", ref: "哥林多前書 13:4", text: "愛是恆久忍耐，又有恩慈；愛是不嫉妒；愛是不自夸，不張狂。" },
+        { theme: "異象 / 亮光", ref: "詩篇 119:105", text: "你的話是我腳前的燈，是我路上的光。" },
+        { theme: "力量", ref: "以賽亞書 40:31", text: "但那等候耶和華的必從新得力。他們必如鷹展翅上騰；他們奔跑卻不困倦，行走卻不疲乏。" },
+        { theme: "家庭", ref: "約書亞記 24:15", text: "至於我和我家，我們必定事奉耶和華。" },
+        { theme: "職場", ref: "歌羅西書 3:23", text: "無論做什麼，都要從心裡做，像是給主做的，不是給人做的。" },
+        { theme: "剛強", ref: "約書亞記 1:9", text: "我豈沒有吩咐你嗎？你當剛強壯膽！不要懼怕，也不要驚惶；因為你無論往哪裡去，耶和華你的神必與你同在。" },
+        { theme: "禱告", ref: "腓立比書 4:6-7", text: "應當一無掛慮，只要凡事藉著禱告、祈求和感謝，將你們所要的告訴神。神所賜出人意外的平安，必在基督耶穌裡保守你們的心懷意念。" },
+        { theme: "異夢 / 啟示", ref: "約珥書 2:28", text: "以後，我要將我的靈澆灌凡有血氣的。你們的兒女要說預言，你們的老年人要做異夢，少年人要見異象。" },
+        { theme: "異象引導", ref: "箴言 29:18", text: "沒有異象，民就放肆；惟遵守律法的，便為有福。" }
     ];
 
-    function openScriptureModal(inputId) {
-        currentScriptureInputId = inputId;
-        const container = document.getElementById('scriptureListContainer');
-        container.innerHTML = scriptureLibrary.map(item => `
-            <div class="scripture-item" onclick="selectScripture('${item.verse}')">
-                <div style="font-weight: bold; color: #0066cc; margin-bottom: 2px;">📌 ${item.theme}</div>
-                <div style="font-size: 14px; color: #333;">📖 ${item.verse}</div>
+    function openScriptureSearchModal(contentId, scriptureId) {
+        activeContentId = contentId;
+        activeScriptureId = scriptureId;
+        document.getElementById('scriptureKeywordInput').value = '';
+        renderScriptureResults(scriptureLibrary);
+        document.getElementById('scriptureSearchModal').style.display = 'flex';
+    }
+
+    function closeScriptureSearchModal() {
+        document.getElementById('scriptureSearchModal').style.display = 'none';
+    }
+
+    function filterScriptureLibrary() {
+        const keyword = document.getElementById('scriptureKeywordInput').value.toLowerCase();
+        const filtered = scriptureLibrary.filter(item => 
+            item.theme.toLowerCase().includes(keyword) || 
+            item.ref.toLowerCase().includes(keyword) || 
+            item.text.toLowerCase().includes(keyword)
+        );
+        renderScriptureResults(filtered);
+    }
+
+    function renderScriptureResults(items) {
+        const container = document.getElementById('scriptureSearchResultList');
+        if (items.length === 0) {
+            container.innerHTML = `<div style="text-align: center; color: #888; padding: 20px;">沒有找到相關的經文關鍵字</div>`;
+            return;
+        }
+
+        container.innerHTML = items.map(item => `
+            <div class="scripture-card">
+                <div style="font-weight: bold; color: #0066cc; margin-bottom: 4px;">📌 [${item.theme}] ${item.ref}</div>
+                <div style="font-size: 14px; color: #333; margin-bottom: 8px;">${item.text}</div>
+                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                    <button type="button" class="btn-success" style="padding: 4px 10px; font-size: 12px;" onclick="insertScriptureToRef('${item.ref}')">➕ 填入經文參考欄</button>
+                    <button type="button" class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="insertScriptureToContent('${item.ref}：${item.text}')">📝 插入至文章內文</button>
+                </div>
             </div>
         `).join('');
-        document.getElementById('scriptureModal').style.display = 'flex';
     }
 
-    function closeScriptureModal() {
-        document.getElementById('scriptureModal').style.display = 'none';
-    }
-
-    function selectScripture(verseText) {
-        if (currentScriptureInputId) {
-            document.getElementById(currentScriptureInputId).value = verseText;
+    function insertScriptureToRef(refText) {
+        if (activeScriptureId) {
+            const inputEl = document.getElementById(activeScriptureId);
+            if (inputEl) {
+                inputEl.value = refText;
+                alert(`已成功將「${refText}」填入經文參考！`);
+            }
         }
-        closeScriptureModal();
+        closeScriptureSearchModal();
+    }
+
+    function insertScriptureToContent(fullText) {
+        if (activeContentId) {
+            const contentEl = document.getElementById(activeContentId);
+            if (contentEl) {
+                if (contentEl.value) {
+                    contentEl.value += `\n\n相關經文參考：${fullText}`;
+                } else {
+                    contentEl.value = `相關經文參考：${fullText}`;
+                }
+                alert(`已成功將經文插入至文章內文結尾！`);
+            }
+        }
+        closeScriptureSearchModal();
     }
 
     // 分頁切換功能
