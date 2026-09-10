@@ -394,6 +394,19 @@
         .detail-row b {
             color: #2c3e50;
         }
+        .scripture-item {
+            background: #f8f9fa;
+            border: 1px solid #e1e8ed;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .scripture-item:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+        }
     </style>
 </head>
 <body>
@@ -415,7 +428,6 @@
 
     <!-- ================= 頁面一：異象與啟示記錄 ================= -->
     <div id="viewRevelation">
-        <!-- 統計資訊面板 -->
         <div class="stats-panel">
             <strong>📊 紀錄分類統計概況（點擊項目可快速篩選檢視）</strong>
             <div class="stats-grid" id="statsGrid">
@@ -423,7 +435,6 @@
             </div>
         </div>
 
-        <!-- 關鍵字熱門列表 -->
         <div class="tag-cloud">
             <div class="tag-cloud-title">🏷️ 熱門關鍵字列表（前 10 名，點擊可直接檢視對應記錄）</div>
             <div class="tag-chips" id="tagChips">
@@ -431,7 +442,6 @@
             </div>
         </div>
 
-        <!-- 搜尋列與檢視模式切換 -->
         <div class="controls-row">
             <input type="text" id="searchInput" class="search-bar" placeholder="🔍 輸入關鍵字搜尋標題、內容、經文、領受者或標籤..." oninput="filterData()">
             <select id="viewModeSelect" class="sort-select" onchange="filterData()">
@@ -445,7 +455,6 @@
             <button class="btn-success" onclick="openAddModal()">➕ 新增記錄</button>
         </div>
 
-        <!-- 分類過濾按鈕區塊 -->
         <div class="category-filters" id="categoryFilters">
             <button class="filter-btn active" onclick="setCategory('全部', this)">全部</button>
             <button class="filter-btn" onclick="setCategory('異夢', this)">異夢</button>
@@ -456,7 +465,6 @@
             <button class="filter-btn" onclick="setCategory('已完全成就', this)">已完全成就</button>
         </div>
 
-        <!-- 資料顯示可滾動清單區域 -->
         <div class="scrollable-card-container">
             <div id="cardList" class="card-list">
                 <div style="text-align: center; color: #888; padding: 40px;">請點擊右上角「同步資料」載入記錄</div>
@@ -518,7 +526,7 @@
                 <label>經文參考：</label>
                 <div style="display: flex; gap: 8px;">
                     <input type="text" id="addScriptureRef" placeholder="例如：約翰福音 3:16" style="flex: 1;">
-                    <button type="button" class="btn-warning" onclick="suggestScripture('addContent', 'addScriptureRef')">💡 智慧推薦</button>
+                    <button type="button" class="btn-warning" onclick="openScriptureModal('addScriptureRef')">💡 智慧推薦</button>
                 </div>
             </div>
             <div class="form-group">
@@ -577,7 +585,7 @@
                 <label>經文參考：</label>
                 <div style="display: flex; gap: 8px;">
                     <input type="text" id="addPrayerScriptureRef" placeholder="例如：羅馬書 8:28" style="flex: 1;">
-                    <button type="button" class="btn-warning" onclick="suggestScripture('addPrayerContent', 'addPrayerScriptureRef')">💡 智慧推薦</button>
+                    <button type="button" class="btn-warning" onclick="openScriptureModal('addPrayerScriptureRef')">💡 智慧推薦</button>
                 </div>
             </div>
             <div class="form-group">
@@ -614,7 +622,7 @@
                 <label>經文參考：</label>
                 <div style="display: flex; gap: 8px;">
                     <input type="text" id="editPrayerScriptureRef" style="flex: 1;">
-                    <button type="button" class="btn-warning" onclick="suggestScripture('editPrayerContent', 'editPrayerScriptureRef')">💡 智慧推薦</button>
+                    <button type="button" class="btn-warning" onclick="openScriptureModal('editPrayerScriptureRef')">💡 智慧推薦</button>
                 </div>
             </div>
             <div class="form-group">
@@ -713,7 +721,7 @@
                 <label>經文參考：</label>
                 <div style="display: flex; gap: 8px;">
                     <input type="text" id="editScriptureRef" style="flex: 1;">
-                    <button type="button" class="btn-warning" onclick="suggestScripture('editContent', 'editScriptureRef')">💡 智慧推薦</button>
+                    <button type="button" class="btn-warning" onclick="openScriptureModal('editScriptureRef')">💡 智慧推薦</button>
                 </div>
             </div>
             <div class="form-group">
@@ -744,7 +752,22 @@
     </div>
 </div>
 
-<!-- 電子書櫃彈跳視窗（支援動態新增、修改、刪除書籍） -->
+<!-- 💡 互動式經文智慧推薦選擇視窗 -->
+<div id="scriptureModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 12px;">
+            <h3 style="margin: 0; color: #2c3e50;">💡 經文智慧推薦與選取</h3>
+            <button type="button" onclick="closeScriptureModal()" style="border: none; background: #ddd; padding: 4px 10px; border-radius: 4px; cursor: pointer;">✕ 關閉</button>
+        </div>
+        <p style="font-size: 13px; color: #666; margin-top: 0;">點擊下方任一主題經文，即可自動填入欄位中：</p>
+        
+        <div style="max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;" id="scriptureListContainer">
+            <!-- 內容由 JS 動態生成 -->
+        </div>
+    </div>
+</div>
+
+<!-- 電子書櫃彈跳視窗 -->
 <div id="bookShelfModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 750px;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 12px;">
@@ -813,6 +836,47 @@
     let mediaRecorder;
     let audioChunks = [];
     let isRecording = false;
+
+    // 目前正在操作的經文參考輸入框 ID
+    let currentScriptureInputId = '';
+
+    // 經文推薦資料庫
+    const scriptureLibrary = [
+        { theme: "恩典與憐憫", verse: "哥林多後書 12:9 - 我的恩典夠你用的，因為我的能力是在人的軟弱上顯得完全。" },
+        { theme: "復興與更新", verse: "詩篇 85:6 - 你不再將我們救活，使你的百姓靠你歡喜嗎？" },
+        { theme: "道路與指引", verse: "箴言 3:5-6 - 你要專心仰賴耶和華，不可倚靠自己的聰明，在你一切所行的事上都要認定他，他必指引你的路。" },
+        { theme: "平安與安慰", verse: "約翰福音 14:27 - 我留下平安給你們，我將我的平安賜給你們。我所賜的，不像世人所賜的；你們心裡不要憂愁，也不要膽怯。" },
+        { theme: "信心與盼望", verse: "希伯來書 11:1 - 信就是所望之事的實底，是未見之事的確據。" },
+        { theme: "愛與包容", verse: "哥林多前書 13:4 - 愛是恆久忍耐，又有恩慈；愛是不嫉妒；愛是不自夸，不張狂。" },
+        { theme: "引導與亮光", verse: "詩篇 119:105 - 你的話是我腳前的燈，是我路上的光。" },
+        { theme: "力量與得勝", verse: "以賽亞書 40:31 - 但那等候耶和華的必從新得力。他們必如鷹展翅上騰；他們奔跑卻不困倦，行走卻不疲乏。" },
+        { theme: "家庭與事奉", verse: "約書亞記 24:15 - 至於我和我家，我們必定事奉耶和華。" },
+        { theme: "職場與智慧", verse: "歌羅西書 3:23 - 無論做什麼，都要從心裡做，像是給主做的，不是給人做的。" },
+        { theme: "力量與剛強", verse: "約書亞記 1:9 - 我豈沒有吩咐你嗎？你當剛強壯膽！不要懼怕，也不要驚惶；因為你無論往哪裡去，耶和華你的神必與你同在。" }
+    ];
+
+    function openScriptureModal(inputId) {
+        currentScriptureInputId = inputId;
+        const container = document.getElementById('scriptureListContainer');
+        container.innerHTML = scriptureLibrary.map(item => `
+            <div class="scripture-item" onclick="selectScripture('${item.verse}')">
+                <div style="font-weight: bold; color: #0066cc; margin-bottom: 2px;">📌 ${item.theme}</div>
+                <div style="font-size: 14px; color: #333;">📖 ${item.verse}</div>
+            </div>
+        `).join('');
+        document.getElementById('scriptureModal').style.display = 'flex';
+    }
+
+    function closeScriptureModal() {
+        document.getElementById('scriptureModal').style.display = 'none';
+    }
+
+    function selectScripture(verseText) {
+        if (currentScriptureInputId) {
+            document.getElementById(currentScriptureInputId).value = verseText;
+        }
+        closeScriptureModal();
+    }
 
     // 分頁切換功能
     function switchTab(tabName) {
@@ -892,36 +956,6 @@
         }
     }
 
-    // 經文智慧自動推薦對照表
-    const scriptureDict = {
-        "恩典": "哥林多後書 12:9 - 我的恩典夠你用的",
-        "復興": "詩篇 85:6 - 你不再將我們救活，使你的百姓靠你歡喜嗎？",
-        "道路": "箴言 3:5-6 - 在你一切所行的事上都要認定他，他必指引你的路",
-        "平安": "約翰福音 14:27 - 我留下平安給你們，我將我的平安賜給你們",
-        "信心": "希伯來書 11:1 - 信就是所望之事的實底，是未見之事的確據",
-        "愛": "哥林多前書 13:4 - 愛是恆久忍耐，又有恩慈",
-        "亮光": "詩篇 119:105 - 你的話是我腳前的燈，是我路上的光",
-        "力量": "以賽亞書 40:31 - 但那等候耶和華的必從新得力",
-        "家庭": "約書亞記 24:15 - 至於我和我家，我們必定事奉耶和華",
-        "職場": "歌羅西書 3:23 - 無論做什麼，都要從心里做，像是給主做的"
-    };
-
-    function suggestScripture(contentId, scriptureId) {
-        const text = document.getElementById(contentId).value;
-        let found = [];
-        for (let key in scriptureDict) {
-            if (text.includes(key)) {
-                found.push(scriptureDict[key]);
-            }
-        }
-        if (found.length > 0) {
-            document.getElementById(scriptureId).value = found.join("；");
-            alert(`💡 智慧推薦經文：\n${found.join("\n")}`);
-        } else {
-            alert("未在內文中偵測到對應的關鍵字（如：恩典、復興、平安、道路、家庭等）。");
-        }
-    }
-
     // 同步資料
     async function fetchDreams() {
         const cardList = document.getElementById('cardList');
@@ -958,7 +992,7 @@
                     }
                 });
 
-                // 自動初始化預設電子書（如果書櫃為空）
+                // 自動初始化預設電子書
                 if (extractedBooks.length === 0) {
                     const defaultBook = {
                         title: "數位刊物第一冊（Time for Taiwan）",
@@ -980,7 +1014,6 @@
                 filterPrayers();
                 renderBookShelfList();
             } else {
-                // 如果整顆資料庫完全是空的，自動初始化預設書本
                 const defaultBook = {
                     title: "數位刊物第一冊（Time for Taiwan）",
                     description: "收錄時間與地區相關的數位出版與異象內容。",
@@ -1123,7 +1156,6 @@
         filterData();
     }
 
-    // 格式化媒體/語音/影片顯示
     function formatMediaHtml(url) {
         if (!url) return '';
         if (url.includes('youtube.com') || url.includes('youtu.be')) {
@@ -1143,7 +1175,6 @@
         return `<div style="margin-bottom: 10px;"><img src="${url}" style="max-width: 100%; max-height: 250px; border-radius: 6px;" alt="附件媒體"></div>`;
     }
 
-    // 渲染時間軸檢視
     function renderTimeline(items) {
         const cardList = document.getElementById('cardList');
         if (items.length === 0) {
@@ -1174,7 +1205,6 @@
         `;
     }
 
-    // 渲染卡片清單
     function renderDreams(items) {
         const cardList = document.getElementById('cardList');
         if (items.length === 0) {
@@ -1226,7 +1256,6 @@
         }).join('');
     }
 
-    // 代禱清單篩選與渲染
     function filterPrayers() {
         const keyword = document.getElementById('searchPrayerInput').value.toLowerCase();
         let prayers = originalData.filter(item => {
@@ -1294,7 +1323,6 @@
         document.getElementById('addPrayerForm').reset();
     }
 
-    // 代禱詳情檢視
     function viewPrayerDetail(firebaseKey) {
         const item = originalData.find(d => d.firebaseKey === firebaseKey);
         if (!item) return;
@@ -1594,7 +1622,7 @@
         }
     }
 
-    // 動態電子書櫃管理（新增、修改、刪除、閱讀）
+    // 動態電子書櫃管理
     function openBookShelf() {
         document.getElementById('bookShelfModal').style.display = 'flex';
         renderBookShelfList();
