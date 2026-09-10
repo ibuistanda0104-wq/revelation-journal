@@ -522,6 +522,52 @@
     </div>
 </div>
 
+<!-- 修改代禱項目彈跳視窗 -->
+<div id="editPrayerModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 style="margin-top: 0; color: #2c3e50;">✏️ 修改代禱項目</h3>
+        <form id="editPrayerForm" onsubmit="saveEditedPrayer(event)">
+            <input type="hidden" id="editPrayerFirebaseKey">
+            <div class="form-group">
+                <label>日期時間：</label>
+                <input type="datetime-local" id="editPrayerDateTime" required>
+            </div>
+            <div class="form-group">
+                <label>代禱主題：</label>
+                <input type="text" id="editPrayerTopic" required>
+            </div>
+            <div class="form-group">
+                <label>代禱項目：</label>
+                <input type="text" id="editPrayerItem" required>
+            </div>
+            <div class="form-group">
+                <label>相關內容：</label>
+                <textarea id="editPrayerContent" rows="4" required></textarea>
+            </div>
+            <div style="text-align: right; margin-top: 15px; display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" onclick="closeEditPrayerModal()" style="padding: 8px 16px; background: #ddd; border: none; border-radius: 6px; cursor: pointer;">取消</button>
+                <button type="submit" class="btn-primary" style="padding: 8px 16px;">儲存修改</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 代禱項目完整內容檢視彈跳視窗 -->
+<div id="prayerDetailModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 id="prayerDetailTitle" style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;"></h3>
+        <div class="detail-row"><b>📅 日期時間：</b><span id="prayerDetailDate"></span></div>
+        <div class="detail-row"><b>🙏 代禱項目：</b><span id="prayerDetailItem"></span></div>
+        <div class="detail-row" style="margin-top: 15px;">
+            <b>📄 詳細內容：</b>
+            <div id="prayerDetailContent" style="background: #f9f9f9; padding: 12px; border-radius: 6px; white-space: pre-wrap; margin-top: 6px; line-height: 1.6;"></div>
+        </div>
+        <div style="text-align: right; margin-top: 20px;">
+            <button type="button" onclick="closePrayerDetailModal()" class="btn-primary" style="padding: 8px 20px;">關閉</button>
+        </div>
+    </div>
+</div>
+
 <!-- 完整內容檢視彈跳視窗 (啟示記錄) -->
 <div id="detailModal" class="modal-overlay">
     <div class="modal-content">
@@ -802,7 +848,7 @@
         const sortOrder = document.getElementById('sortOrder').value;
 
         let filtered = originalData.filter(item => {
-            if (item.type === '代禱') return false; // 排除代禱項目
+            if (item.type === '代禱') return false;
 
             let matchCategory = true;
             if (currentCategory !== '全部') {
@@ -868,17 +914,22 @@
         }
 
         prayerList.innerHTML = items.map(item => {
+            const previewContent = item.content && item.content.length > 100 
+                ? item.content.substring(0, 100) + '...' 
+                : (item.content || '');
+
             return `
                 <div class="card">
                     <div class="card-header">
                         <span>📅 日期時間：${item.occurredAt || '未知時間'}</span>
                         <span>🙏 代禱項目：<b>${item.prayerItem || '未分類'}</b></span>
                     </div>
-                    <h3 class="card-title" style="color: #2c3e50;">📌 主題：${item.title || '無主題'}</h3>
-                    <div class="card-content"><b>相關內容：</b><br>${item.content || ''}</div>
+                    <h3 class="card-title" onclick="viewPrayerDetail('${item.firebaseKey}')" title="點擊檢視全文">📌 主題：${item.title || '無主題'}</h3>
+                    <div class="card-content">${previewContent}</div>
                     <div class="card-footer">
                         <span style="font-size: 12px; color: #888;">ID: ${item.firebaseKey}</span>
                         <div class="action-btns">
+                            <button class="btn-edit" onclick="openEditPrayerModal('${item.firebaseKey}')">修改</button>
                             <button class="btn-delete" onclick="deleteItem('${item.firebaseKey}')">刪除</button>
                         </div>
                     </div>
@@ -905,6 +956,75 @@
     function closeAddPrayerModal() {
         document.getElementById('addPrayerModal').style.display = 'none';
         document.getElementById('addPrayerForm').reset();
+    }
+
+    // 代禱詳情檢視
+    function viewPrayerDetail(firebaseKey) {
+        const item = originalData.find(d => d.firebaseKey === firebaseKey);
+        if (!item) return;
+
+        document.getElementById('prayerDetailTitle').textContent = `📌 主題：${item.title || '無主題'}`;
+        document.getElementById('prayerDetailDate').textContent = item.occurredAt || '未知時間';
+        document.getElementById('prayerDetailItem').textContent = item.prayerItem || '未分類';
+        document.getElementById('prayerDetailContent').textContent = item.content || '（無內容）';
+        document.getElementById('prayerDetailModal').style.display = 'flex';
+    }
+    function closePrayerDetailModal() {
+        document.getElementById('prayerDetailModal').style.display = 'none';
+    }
+
+    // 修改代禱項目
+    function openEditPrayerModal(firebaseKey) {
+        const item = originalData.find(d => d.firebaseKey === firebaseKey);
+        if (!item) return;
+
+        document.getElementById('editPrayerFirebaseKey').value = item.firebaseKey;
+        let dtVal = item.occurredAt ? item.occurredAt.replace(' ', 'T') : '';
+        if (dtVal.length >= 16) {
+            document.getElementById('editPrayerDateTime').value = dtVal.substring(0, 16);
+        } else {
+            document.getElementById('editPrayerDateTime').value = '';
+        }
+        document.getElementById('editPrayerTopic').value = item.title || '';
+        document.getElementById('editPrayerItem').value = item.prayerItem || '';
+        document.getElementById('editPrayerContent').value = item.content || '';
+
+        document.getElementById('editPrayerModal').style.display = 'flex';
+    }
+    function closeEditPrayerModal() {
+        document.getElementById('editPrayerModal').style.display = 'none';
+        document.getElementById('editPrayerForm').reset();
+    }
+
+    async function saveEditedPrayer(event) {
+        event.preventDefault();
+        const firebaseKey = document.getElementById('editPrayerFirebaseKey').value;
+        const updatedPrayer = {
+            type: "代禱",
+            occurredAt: document.getElementById('editPrayerDateTime').value.replace('T', ' '),
+            title: document.getElementById('editPrayerTopic').value,
+            prayerItem: document.getElementById('editPrayerItem').value,
+            content: document.getElementById('editPrayerContent').value
+        };
+
+        try {
+            const response = await fetch(`${databaseUrl}/${firebaseKey}.json`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedPrayer)
+            });
+
+            if (response.ok) {
+                alert("代禱項目修改成功！");
+                closeEditPrayerModal();
+                fetchDreams();
+            } else {
+                alert("修改失敗");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("修改發生錯誤");
+        }
     }
 
     async function saveNewItem(event) {
