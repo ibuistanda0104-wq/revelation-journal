@@ -552,7 +552,7 @@
     </div>
 </div>
 
-<!-- 代禱項目完整內容檢視彈跳視窗 -->
+<!-- 代禱項目完整內容檢視彈跳視窗 (含相關異象/啟示) -->
 <div id="prayerDetailModal" class="modal-overlay">
     <div class="modal-content">
         <h3 id="prayerDetailTitle" style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;"></h3>
@@ -561,6 +561,12 @@
         <div class="detail-row" style="margin-top: 15px;">
             <b>📄 詳細內容：</b>
             <div id="prayerDetailContent" style="background: #f9f9f9; padding: 12px; border-radius: 6px; white-space: pre-wrap; margin-top: 6px; line-height: 1.6;"></div>
+        </div>
+        <div class="detail-row" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+            <b>🔗 與此代禱相關的異象/異夢/啟示：</b>
+            <div id="prayerRelatedRevelations" style="margin-top: 8px;">
+                <span style="color: #888; font-size: 13px;">載入中...</span>
+            </div>
         </div>
         <div style="text-align: right; margin-top: 20px;">
             <button type="button" onclick="closePrayerDetailModal()" class="btn-primary" style="padding: 8px 20px;">關閉</button>
@@ -958,7 +964,7 @@
         document.getElementById('addPrayerForm').reset();
     }
 
-    // 代禱詳情檢視
+    // 代禱詳情檢視 (自動帶出相關異象/異夢/啟示)
     function viewPrayerDetail(firebaseKey) {
         const item = originalData.find(d => d.firebaseKey === firebaseKey);
         if (!item) return;
@@ -967,6 +973,27 @@
         document.getElementById('prayerDetailDate').textContent = item.occurredAt || '未知時間';
         document.getElementById('prayerDetailItem').textContent = item.prayerItem || '未分類';
         document.getElementById('prayerDetailContent').textContent = item.content || '（無內容）';
+
+        // 自動掃描並找出相關的異象/異夢/啟示
+        const relatedContainer = document.getElementById('prayerRelatedRevelations');
+        let relatedItems = originalData.filter(d => {
+            if (d.type === '代禱') return false;
+            let dText = (d.title + " " + d.content + " " + (d.tags || "")).toLowerCase();
+            let keywords = (item.title + " " + item.prayerItem).split(/[,，\s]+/).filter(w => w.length >= 2);
+            return keywords.some(kw => dText.includes(kw.toLowerCase()));
+        });
+
+        if (relatedItems.length > 0) {
+            relatedContainer.innerHTML = relatedItems.map(r => `
+                <div style="background: #f0f4f8; padding: 10px 12px; border-radius: 6px; margin-bottom: 8px; cursor: pointer; border: 1px solid #d1e0ee; transition: all 0.2s;" onclick="closePrayerDetailModal(); switchTab('revelation'); viewDetail('${r.firebaseKey}')" onmouseover="this.style.background='#e2edf7'" onmouseout="this.style.background='#f0f4f8'">
+                    <div style="font-weight: bold; color: #0066cc;">☁️ [${r.type || '異夢'}] ${r.title || '無標題'}</div>
+                    <div style="font-size: 12px; color: #555; margin-top: 3px;">📅 發生日期：${r.occurredAt || '未知'} | 點擊直接前往檢視 ➔</div>
+                </div>
+            `).join('');
+        } else {
+            relatedContainer.innerHTML = `<span style="color: #888; font-size: 13px;">目前沒有找到與此代禱直接相關的異象、異夢或啟示記錄（您可以嘗試在代禱主題或內容中加入相同的關鍵字或標籤）。</span>`;
+        }
+
         document.getElementById('prayerDetailModal').style.display = 'flex';
     }
     function closePrayerDetailModal() {
