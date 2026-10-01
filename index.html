@@ -414,6 +414,7 @@
     <header>
         <h1>☁️ 神國拼圖紀錄與代禱系統</h1>
         <div class="header-btns">
+            <button class="btn-warning" onclick="exportDataBackup()">📥 匯出資料備份</button>
             <button class="btn-info" onclick="openBookShelf()">📚 電子書櫃</button>
             <button class="btn-primary" onclick="fetchDreams()">☁️ 同步資料</button>
         </div>
@@ -665,7 +666,7 @@
         <h3 id="detailTitle" style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;"></h3>
         <div class="detail-row"><b>📅 發生日期：</b><span id="detailDate"></span></div>
         <div class="detail-row" id="detailRecipientContainer"><b>👤 領受者：</b><span id="detailRecipient"></span></div>
-        <div class="detail-row"><b>🏷️ 類型與狀態：</b><span id="detailTypeStatus"></span></div>
+        <div class="detail-row"><b>🏷️️ 類型與狀態：</b><span id="detailTypeStatus"></span></div>
         <div class="detail-row" id="detailScriptureContainer"><b>📖 經文參考：</b><span id="detailScripture"></span></div>
         <div class="detail-row" id="detailInterpContainer"><b>💡 領受與解讀：</b><div id="detailInterp" style="background: #f9f9f9; padding: 8px; border-radius: 4px; margin-top: 4px;"></div></div>
         <div class="detail-row" id="detailMediaContainer" style="display: none;"><b>🖼️ 附件媒體：</b><div id="detailMedia" style="margin-top: 6px;"></div></div>
@@ -759,9 +760,8 @@
             <button type="button" onclick="closeScriptureSearchModal()" style="border: none; background: #ddd; padding: 4px 10px; border-radius: 4px; cursor: pointer;">✕ 關閉</button>
         </div>
         
-        <!-- 自訂經文直接加入區塊 -->
         <div style="background: #eef2f7; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #d1e0ee;">
-            <div style="font-weight: bold; font-size: 13px; color: #1e3c72; margin-bottom: 6px;">➕ 自訂整本聖經任意經文：</div>
+            <div style="font-weight: bold; font-size: 13px; color: #1e3c72; margin-bottom: 6px;">➕ 自訂任意經文：</div>
             <div style="display: flex; gap: 8px; margin-bottom: 6px;">
                 <input type="text" id="customScriptureRefInput" placeholder="經文出處 (例如：創世記 1:1)" style="flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
             </div>
@@ -775,9 +775,7 @@
             <input type="text" id="scriptureKeywordInput" class="search-bar" placeholder="🔍 輸入關鍵字、書卷名（例如：創世記、詩篇、約翰福音、恩典、信心...）" oninput="filterScriptureLibrary()" style="width: 100%;">
         </div>
         <div style="font-size: 13px; color: #666; margin-bottom: 8px;">點擊下方按鈕可直接將經文「填入經文參考欄」或「插入至文章內容」：</div>
-        <div style="max-height: 40vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;" id="scriptureSearchResultList">
-            <!-- 動態渲染經文結果 -->
-        </div>
+        <div style="max-height: 40vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;" id="scriptureSearchResultList"></div>
     </div>
 </div>
 
@@ -853,7 +851,6 @@
     let activeContentId = '';
     let activeScriptureId = '';
 
-    // 涵蓋舊約與新約全書核心書卷與主題的經文庫
     const scriptureLibrary = [
         { theme: "創世記 / 創造", ref: "創世記 1:1", text: "起初神創造天地。" },
         { theme: "出埃及記 / 救贖", ref: "出埃及記 14:14", text: "耶和華必為你們爭戰，你們只管靜默，不要作聲。" },
@@ -891,6 +888,23 @@
         { theme: "約一 / 愛裡沒有懼怕", ref: "約翰一書 4:18", text: "愛裡沒有懼怕；愛既完全，就把懼怕除去。" },
         { theme: "啟 / 萬王之王", ref: "啟示錄 19:16", text: "在他衣服和腿上有名寫着說：「萬王之王，萬主之主。」" }
     ];
+
+    // 匯出全部資料備份功能
+    function exportDataBackup() {
+        const backupObj = {
+            exportDate: new Date().toISOString(),
+            revelations: originalData,
+            bookshelf: booksData
+        };
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `KingdomPuzzle_Backup_${new Date().toISOString().split('T')[0]}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        alert("📥 資料備份檔案已成功下載！");
+    }
 
     function openScriptureSearchModal(contentId, scriptureId) {
         activeContentId = contentId;
@@ -974,7 +988,6 @@
         }
     }
 
-    // 分頁切換功能
     function switchTab(tabName) {
         const revView = document.getElementById('viewRevelation');
         const prayView = document.getElementById('viewPrayer');
@@ -1281,8 +1294,8 @@
                     return `
                         <div class="timeline-item">
                             <div class="card-header">
-                                <span>📅 ${item.occurredAt || '未知日期'}${recipientText}</span>
-                                <span>🏷️ ${item.type || '未分類'} | 狀態: ${item.status || '未設定'}</span>
+                                <span>📅 ${item.occurredAt \vert{}\vert{} '未知日期'}${recipientText}</span>
+                                <span>🏷️ ${item.type \vert{}\vert{} '未分類'} \vert{} 狀態: ${item.status || '未設定'}</span>
                             </div>
                             <h3 class="card-title" onclick="viewDetail('${item.firebaseKey}')">${item.title || '無標題'}</h3>
                             <div class="card-content">${previewContent}</div>
