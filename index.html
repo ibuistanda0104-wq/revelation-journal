@@ -666,7 +666,7 @@
         <h3 id="detailTitle" style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;"></h3>
         <div class="detail-row"><b>📅 發生日期：</b><span id="detailDate"></span></div>
         <div class="detail-row" id="detailRecipientContainer"><b>👤 領受者：</b><span id="detailRecipient"></span></div>
-        <div class="detail-row"><b>🏷️️ 類型與狀態：</b><span id="detailTypeStatus"></span></div>
+        <div class="detail-row"><b>🏷️ 類型與狀態：</b><span id="detailTypeStatus"></span></div>
         <div class="detail-row" id="detailScriptureContainer"><b>📖 經文參考：</b><span id="detailScripture"></span></div>
         <div class="detail-row" id="detailInterpContainer"><b>💡 領受與解讀：</b><div id="detailInterp" style="background: #f9f9f9; padding: 8px; border-radius: 4px; margin-top: 4px;"></div></div>
         <div class="detail-row" id="detailMediaContainer" style="display: none;"><b>🖼️ 附件媒體：</b><div id="detailMedia" style="margin-top: 6px;"></div></div>
@@ -889,7 +889,6 @@
         { theme: "啟 / 萬王之王", ref: "啟示錄 19:16", text: "在他衣服和腿上有名寫着說：「萬王之王，萬主之主。」" }
     ];
 
-    // 匯出全部資料備份功能
     function exportDataBackup() {
         const backupObj = {
             exportDate: new Date().toISOString(),
@@ -1063,6 +1062,7 @@
         }
     }
 
+    // 💡 升級版全域遞迴掃描同步引擎：確保無論資料在 Firebase 裡如何巢狀存放，都能全部找出來
     async function fetchDreams() {
         const cardList = document.getElementById('cardList');
         cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">同步中...</div>`;
@@ -1075,29 +1075,40 @@
                 let extractedItems = [];
                 let extractedBooks = [];
 
-                Object.keys(data).forEach(rootKey => {
-                    let val = data[rootKey];
-                    if (rootKey === 'bookshelf' && val && typeof val === 'object') {
-                        Object.keys(val).forEach(bKey => {
-                            extractedBooks.push({ bookKey: bKey, ...val[bKey] });
-                        });
+                // 遞迴掃描 Firebase JSON 樹狀結構中的所有節點
+                function scanNode(obj, path = '') {
+                    if (!obj || typeof obj !== 'object') return;
+
+                    // 如果是書櫃節點
+                    if (path === 'bookshelf' || path.startsWith('bookshelf/')) {
                         return;
                     }
 
-                    if (val && typeof val === 'object') {
-                        if (val.title || val.type === '代禱') {
-                            extractedItems.push({ firebaseKey: rootKey, ...val });
-                        } else {
-                            Object.keys(val).forEach(subKey => {
-                                let subVal = val[subKey];
-                                if (subVal && typeof subVal === 'object' && (subVal.title || subVal.type === '代禱')) {
-                                    extractedItems.push({ firebaseKey: `${rootKey}/${subKey}`, ...subVal });
-                                }
-                            });
-                        }
+                    // 判斷此物件是否為一筆有效記錄（異夢、異象、啟示或代禱）
+                    if (obj.title || obj.type === '代禱') {
+                        extractedItems.push({ firebaseKey: path, ...obj });
+                        return; // 找到後即停止往下，避免重複
                     }
-                });
 
+                    // 繼續向下遞迴
+                    Object.keys(obj).forEach(key => {
+                        const subPath = path ? `${path}/${key}` : key;
+                        if (key === 'bookshelf') {
+                            let bVal = obj[key];
+                            if (bVal && typeof bVal === 'object') {
+                                Object.keys(bVal).forEach(bKey => {
+                                    extractedBooks.push({ bookKey: bKey, ...bVal[bKey] });
+                                });
+                            }
+                        } else {
+                            scanNode(obj[key], subPath);
+                        }
+                    });
+                }
+
+                scanNode(data);
+
+                // 若書櫃為空則自動初始化
                 if (extractedBooks.length === 0) {
                     const defaultBook = {
                         title: "數位刊物第一冊（Time for Taiwan）",
