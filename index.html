@@ -671,7 +671,7 @@
         <h3 id="detailTitle" style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;"></h3>
         <div class="detail-row"><b>📅 發生日期：</b><span id="detailDate"></span></div>
         <div class="detail-row" id="detailRecipientContainer"><b>👤 領受者：</b><span id="detailRecipient"></span></div>
-        <div class="detail-row"><b>🏷️️ 類型與狀態：</b><span id="detailTypeStatus"></span></div>
+        <div class="detail-row"><b>🏷️ 類型與狀態：</b><span id="detailTypeStatus"></span></div>
         <div class="detail-row" id="detailScriptureContainer"><b>📖 經文參考：</b><span id="detailScripture"></span></div>
         <div class="detail-row" id="detailInterpContainer"><b>💡 領受與解讀：</b><div id="detailInterp" style="background: #f9f9f9; padding: 8px; border-radius: 4px; margin-top: 4px;"></div></div>
         <div class="detail-row" id="detailMediaContainer" style="display: none;"><b>🖼️ 附件媒體：</b><div id="detailMedia" style="margin-top: 6px;"></div></div>
@@ -973,11 +973,14 @@
     // 📄 使用 html2pdf 套件直接下載 PDF
     function exportToPDFReport() {
         let reportDiv = document.createElement('div');
+        reportDiv.style.position = 'absolute';
+        reportDiv.style.left = '-9999px';
+        reportDiv.style.top = '0';
         reportDiv.style.padding = '30px';
         reportDiv.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         reportDiv.style.color = '#333';
         reportDiv.style.backgroundColor = '#fff';
-        reportDiv.style.width = '750px';
+        reportDiv.style.width = '700px';
 
         let htmlContent = `
             <h1 style="text-align: center; color: #2c3e50; border-bottom: 2px solid #4a90e2; padding-bottom: 10px;">☁️ 神國拼圖屬靈紀錄與代禱報告</h1>
@@ -1020,18 +1023,25 @@
         }
 
         reportDiv.innerHTML = htmlContent;
+        document.body.appendChild(reportDiv);
 
         let opt = {
             margin:       10,
             filename:     `KingdomPuzzle_Report_${new Date().toISOString().split('T')[0]}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
+            html2canvas:  { scale: 2, useCORS: true, logging: false },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
         alert("⏳ 正在為您產生 PDF 檔案，請稍候幾秒鐘就會自動下載...");
+        
         html2pdf().from(reportDiv).set(opt).save().then(() => {
+            document.body.removeChild(reportDiv);
             alert("📄 PDF 檔案已成功下載到您的裝置！");
+        }).catch(err => {
+            console.error(err);
+            document.body.removeChild(reportDiv);
+            alert("產生 PDF 發生錯誤，請稍後再試。");
         });
     }
 
@@ -1582,7 +1592,7 @@
             for (let i = 0; i < relatedItems.length; i++) {
                 const r = relatedItems[i];
                 relHtml += '<div style="background: #f0f4f8; padding: 10px 12px; border-radius: 6px; margin-bottom: 8px; cursor: pointer; border: 1px solid #d1e0ee;" onclick="closePrayerDetailModal(); switchTab(\'revelation\'); viewDetail(\'' + r.firebaseKey + '\')">';
-                relHtml += '<div style="font-weight: bold; color: #0066cc;">☁️️ [' + (r.type || '異夢') + '] ' + (r.title || '無標題') + '</div>';
+                relHtml += '<div style="font-weight: bold; color: #0066cc;">☁️ [' + (r.type || '異夢') + '] ' + (r.title || '無標題') + '</div>';
                 relHtml += '<div style="font-size: 12px; color: #555; margin-top: 3px;">📅 發生日期：' + (r.occurredAt || '未知') + ' | 點擊前往檢視 ➔</div>';
                 relHtml += '</div>';
             }
