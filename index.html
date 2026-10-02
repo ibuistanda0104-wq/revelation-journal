@@ -412,7 +412,7 @@
 
 <div class="container">
     <header>
-        <h1>☁️ 神國拼圖紀錄與代禱系統</h1>
+        <h1>☁️️ 神國拼圖紀錄與代禱系統</h1>
         <div class="header-btns">
             <button class="btn-warning" onclick="exportDataBackup()">📥 匯出資料備份</button>
             <button class="btn-info" onclick="openBookShelf()">📚 電子書櫃</button>
@@ -842,7 +842,7 @@
     let booksData = [];
     let currentCategory = '全部';
     let currentTag = '';
-    const databaseUrl = "https://revelation-sync-default-rtdb.firebaseio.com"; // 💡 已移除結尾斜線以防路徑錯誤
+    const databaseUrl = "https://revelation-sync-default-rtdb.firebaseio.com";
 
     let mediaRecorder;
     let audioChunks = [];
@@ -1337,6 +1337,14 @@
             const recipientHeaderHtml = item.recipient ? ` | 領受者: ${item.recipient}` : '';
             const recipientBottomHtml = item.recipient ? `<div style="font-size: 13px; color: #555; margin-bottom: 8px;"><strong>👤 領受者：</strong>${item.recipient}</div>` : '';
             const mediaHtml = item.mediaUrl ? formatMediaHtml(item.mediaUrl) : '';
+            
+            const interpretationHtml = item.interpretation 
+                ? `<div style="font-size: 14px; color: #555; background: #f9f9f9; padding: 8px; border-radius: 4px; margin-bottom: 8px;"><strong>💡 領受與解讀：</strong>${item.interpretation}</div>` 
+                : '';
+
+            const tagsHtml = item.tags 
+                ? `<div style="font-size: 12px; color: #0066cc; margin-bottom: 8px;">#${item.tags.replace(/,/g, ' #')}</div>` 
+                : '';
 
             return `
                 <div class="card">
@@ -1347,9 +1355,9 @@
                     <h3 class="card-title" onclick="viewDetail('${item.firebaseKey}')" title="點擊檢視全文">${item.title || '無標題'}</h3>
                     ${mediaHtml}
                     <div class="card-content">${previewContent}</div>
-                    ${item.interpretation ? `<div style="font-size: 14px; color: #555; background: #f9f9f9; padding: 8px; border-radius: 4px; margin-bottom: 8px;"><strong>💡 領受與解讀：</strong>${item.interpretation}</div>` : ''}
+                    ${interpretationHtml}
                     ${recipientBottomHtml}
-                    ${item.tags ? `<div style="font-size: 12px; color: #0066cc; margin-bottom: 8px;">#${item.tags.replace(/,/g, ' #')}</div>` : ''}
+                    ${tagsHtml}
                     
                     <div class="card-footer">
                         <div class="link-group">
