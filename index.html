@@ -441,7 +441,7 @@
         </div>
 
         <div class="tag-cloud">
-            <div class="tag-cloud-title">🏷️️ 熱門關鍵字列表（前 10 名，點擊可直接檢視對應記錄）</div>
+            <div class="tag-cloud-title">🏷️ 熱門關鍵字列表（前 10 名，點擊可直接檢視對應記錄）</div>
             <div class="tag-chips" id="tagChips">
                 <span style="color: #888; font-size: 13px;">載入後顯示關鍵字...</span>
             </div>
@@ -970,19 +970,22 @@
         reader.readAsText(file);
     }
 
-    // 📄 使用 html2pdf 套件直接下載 PDF（已修復空白頁問題）
+    // 📄 匯出 PDF 報告（已修復空白頁問題，點擊後自動下載）
     function exportToPDFReport() {
+        if (originalData.length === 0) {
+            alert("目前沒有資料可以匯出 PDF！");
+            return;
+        }
+
         let reportDiv = document.createElement('div');
         reportDiv.style.padding = '30px';
         reportDiv.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         reportDiv.style.color = '#333';
         reportDiv.style.backgroundColor = '#fff';
         reportDiv.style.width = '700px';
-        reportDiv.style.position = 'fixed';
-        reportDiv.style.left = '0';
+        reportDiv.style.position = 'absolute';
+        reportDiv.style.left = '-9999px';
         reportDiv.style.top = '0';
-        reportDiv.style.zIndex = '-9999';
-        reportDiv.style.opacity = '0';
 
         let htmlContent = `
             <h1 style="text-align: center; color: #2c3e50; border-bottom: 2px solid #4a90e2; padding-bottom: 10px;">☁️ 神國拼圖屬靈紀錄與代禱報告</h1>
@@ -1037,7 +1040,6 @@
 
         alert("⏳ 正在為您產生 PDF 檔案，請稍候 2 秒鐘就會自動下載...");
 
-        // 延遲 300 毫秒讓瀏覽器完成渲染，避免 PDF 空白
         setTimeout(() => {
             html2pdf().from(reportDiv).set(opt).save().then(() => {
                 document.body.removeChild(reportDiv);
@@ -1047,7 +1049,7 @@
                 document.body.removeChild(reportDiv);
                 alert("產生 PDF 發生錯誤，請稍後再試。");
             });
-        }, 300);
+        }, 500);
     }
 
     function openScriptureSearchModal(contentId, scriptureId) {
