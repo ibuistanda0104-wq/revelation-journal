@@ -492,6 +492,9 @@
     </div>
 </div>
 
+<!-- 專用 PDF 匯出隱藏容器 -->
+<div id="pdfExportArea" style="display: none; background: #fff; padding: 30px; width: 700px;"></div>
+
 <!-- 新增異象/啟示記錄彈跳視窗 -->
 <div id="addModal" class="modal-overlay">
     <div class="modal-content">
@@ -608,7 +611,7 @@
 <!-- 修改代禱項目彈跳視窗 -->
 <div id="editPrayerModal" class="modal-overlay">
     <div class="modal-content">
-        <h3 style="margin-top: 0; color: #2c3e50;">✏️ 修改代禱項目</h3>
+        <h3 style="margin-top: 0; color: #2c3e50;">✏️️ 修改代禱項目</h3>
         <form id="editPrayerForm" onsubmit="saveEditedPrayer(event)">
             <input type="hidden" id="editPrayerFirebaseKey">
             <div class="form-group">
@@ -970,23 +973,14 @@
         reader.readAsText(file);
     }
 
-    // 📄 匯出 PDF 報告（已修復空白頁問題，點擊後自動下載）
+    // 📄 匯出 PDF 報告（使用專用可見容器，確保內容完整不空白）
     function exportToPDFReport() {
         if (originalData.length === 0) {
             alert("目前沒有資料可以匯出 PDF！");
             return;
         }
 
-        let reportDiv = document.createElement('div');
-        reportDiv.style.padding = '30px';
-        reportDiv.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        reportDiv.style.color = '#333';
-        reportDiv.style.backgroundColor = '#fff';
-        reportDiv.style.width = '700px';
-        reportDiv.style.position = 'absolute';
-        reportDiv.style.left = '-9999px';
-        reportDiv.style.top = '0';
-
+        const reportArea = document.getElementById('pdfExportArea');
         let htmlContent = `
             <h1 style="text-align: center; color: #2c3e50; border-bottom: 2px solid #4a90e2; padding-bottom: 10px;">☁️ 神國拼圖屬靈紀錄與代禱報告</h1>
             <p style="text-align: center; color: #666; font-size: 13px;">匯出日期：${new Date().toLocaleDateString()}</p>
@@ -1027,8 +1021,8 @@
             });
         }
 
-        reportDiv.innerHTML = htmlContent;
-        document.body.appendChild(reportDiv);
+        reportArea.innerHTML = htmlContent;
+        reportArea.style.display = 'block';
 
         let opt = {
             margin:       10,
@@ -1041,15 +1035,15 @@
         alert("⏳ 正在為您產生 PDF 檔案，請稍候 2 秒鐘就會自動下載...");
 
         setTimeout(() => {
-            html2pdf().from(reportDiv).set(opt).save().then(() => {
-                document.body.removeChild(reportDiv);
+            html2pdf().from(reportArea).set(opt).save().then(() => {
+                reportArea.style.display = 'none';
                 alert("📄 PDF 檔案已成功下載到您的裝置！");
             }).catch(err => {
                 console.error(err);
-                document.body.removeChild(reportDiv);
+                reportArea.style.display = 'none';
                 alert("產生 PDF 發生錯誤，請稍後再試。");
             });
-        }, 500);
+        }, 400);
     }
 
     function openScriptureSearchModal(contentId, scriptureId) {
@@ -1452,7 +1446,7 @@
             const key = item.firebaseKey;
 
             html += '<div class="timeline-item">';
-            html += '<div class="card-header"><span>📅 ' + dateStr + recipientText + '</span><span>🏷️ ' + typeStatus + '</span></div>';
+            html += '<div class="card-header"><span>📅 ' + dateStr + recipientText + '</span><span>🏷️️ ' + typeStatus + '</span></div>';
             html += '<h3 class="card-title" onclick="viewDetail(\'' + key + '\')">' + title + '</h3>';
             html += '<div class="card-content">' + previewContent + '</div>';
             html += '<div style="text-align: right;"><button class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="viewDetail(\'' + key + '\')">完整檢視</button></div>';
