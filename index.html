@@ -414,6 +414,8 @@
     <header>
         <h1>☁️️ 神國拼圖紀錄與代禱系統</h1>
         <div class="header-btns">
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importDataBackup(this)">
+            <button class="btn-secondary" onclick="document.getElementById('importFile').click()">📤 匯入備份還原</button>
             <button class="btn-warning" onclick="exportDataBackup()">📥 匯出資料備份</button>
             <button class="btn-info" onclick="openBookShelf()">📚 電子書櫃</button>
             <button class="btn-primary" onclick="fetchDreams()">☁️ 同步資料</button>
@@ -666,7 +668,7 @@
         <h3 id="detailTitle" style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;"></h3>
         <div class="detail-row"><b>📅 發生日期：</b><span id="detailDate"></span></div>
         <div class="detail-row" id="detailRecipientContainer"><b>👤 領受者：</b><span id="detailRecipient"></span></div>
-        <div class="detail-row"><b>🏷️ 類型與狀態：</b><span id="detailTypeStatus"></span></div>
+        <div class="detail-row"><b>🏷️️ 類型與狀態：</b><span id="detailTypeStatus"></span></div>
         <div class="detail-row" id="detailScriptureContainer"><b>📖 經文參考：</b><span id="detailScripture"></span></div>
         <div class="detail-row" id="detailInterpContainer"><b>💡 領受與解讀：</b><div id="detailInterp" style="background: #f9f9f9; padding: 8px; border-radius: 4px; margin-top: 4px;"></div></div>
         <div class="detail-row" id="detailMediaContainer" style="display: none;"><b>🖼️ 附件媒體：</b><div id="detailMedia" style="margin-top: 6px;"></div></div>
@@ -905,6 +907,64 @@
         alert("📥 資料備份檔案已成功下載！");
     }
 
+    function importDataBackup(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const content = e.target.result;
+                const backupData = JSON.parse(content);
+                if (confirm("確定要將備份檔案中的資料還原並覆蓋至雲端資料庫嗎？")) {
+                    if (backupData.revelations) {
+                        for (let item of backupData.revelations) {
+                            let key = item.firebaseKey;
+                            delete item.firebaseKey;
+                            if (key) {
+                                await fetch(`${databaseUrl}/${key}.json`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(item)
+                                });
+                            } else {
+                                await fetch(`${databaseUrl}/.json`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(item)
+                                });
+                            }
+                        }
+                    }
+                    if (backupData.bookshelf) {
+                        for (let book of backupData.bookshelf) {
+                            let bKey = book.bookKey;
+                            delete book.bookKey;
+                            if (bKey && bKey !== 'default_init') {
+                                await fetch(`${databaseUrl}/bookshelf/${bKey}.json`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(book)
+                                });
+                            } else {
+                                await fetch(`${databaseUrl}/bookshelf.json`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(book)
+                                });
+                            }
+                        }
+                    }
+                    alert("📂 備份資料還原成功！");
+                    fetchDreams();
+                }
+            } catch (err) {
+                console.error(err);
+                alert("匯入失敗，請確認檔案格式是否正確。");
+            }
+        };
+        reader.readAsText(file);
+    }
+
     function openScriptureSearchModal(contentId, scriptureId) {
         activeContentId = contentId;
         activeScriptureId = scriptureId;
@@ -936,16 +996,21 @@
             return;
         }
 
-        container.innerHTML = items.map(item => `
-            <div class="scripture-card">
-                <div style="font-weight: bold; color: #0066cc; margin-bottom: 4px;">📌 [${item.theme}] ${item.ref}</div>
-                <div style="font-size: 14px; color: #333; margin-bottom: 8px;">${item.text}</div>
-                <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                    <button type="button" class="btn-success" style="padding: 4px 10px; font-size: 12px;" onclick="insertScriptureToRef('${item.ref}')">➕ 填入經文參考欄</button>
-                    <button type="button" class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="insertScriptureToContent('${item.ref}：${item.text}')">📝 插入至文章內文</button>
+        container.innerHTML = items.map(item => {
+            const cardTheme = item.theme;
+            const cardRef = item.ref;
+            const cardText = item.text;
+            return `
+                <div class="scripture-card">
+                    <div style="font-weight: bold; color: #0066cc; margin-bottom: 4px;">📌 [${cardTheme}] ${cardRef}</div>
+                    <div style="font-size: 14px; color: #333; margin-bottom: 8px;">${cardText}</div>
+                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <button type="button" class="btn-success" style="padding: 4px 10px; font-size: 12px;" onclick="insertScriptureToRef('${cardRef}')">➕ 填入經文參考欄</button>
+                        <button type="button" class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="insertScriptureToContent('${cardRef}：${cardText}')">📝 插入至文章內文</button>
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     function insertScriptureToRef(refText) {
@@ -1323,50 +1388,46 @@
         }
 
         cardList.innerHTML = items.map(item => {
-            const scriptureHtml = item.scriptureRef 
-                ? `<a href="https://www.google.com/search?q=聖經+${encodeURIComponent(item.scriptureRef)}" target="_blank" class="web-link">📖 ${item.scriptureRef}</a>` 
-                : '';
-
-            const searchQuery = item.title || (item.content ? item.content.substring(0, 15) : '');
-            const webSearchHtml = searchQuery ? `<a href="https://www.google.com/search?q=${encodeURIComponent(searchQuery)}" target="_blank" class="web-link">🌐 網路新聞/文章查詢</a>` : '';
-
-            const previewContent = item.content && item.content.length > 100 
-                ? item.content.substring(0, 100) + '...' 
-                : (item.content || '');
-
-            const recipientHeaderHtml = item.recipient ? ` | 領受者: ${item.recipient}` : '';
-            const recipientBottomHtml = item.recipient ? `<div style="font-size: 13px; color: #555; margin-bottom: 8px;"><strong>👤 領受者：</strong>${item.recipient}</div>` : '';
-            const mediaHtml = item.mediaUrl ? formatMediaHtml(item.mediaUrl) : '';
+            const dateStr = item.occurredAt || '未知日期';
+            const recipientText = item.recipient ? ` | 領受者: ${item.recipient}` : '';
+            const typeStatus = `${item.type || '未分類'} | 狀態: ${item.status || '未設定'}`;
+            const titleText = item.title || '無標題';
+            const key = item.firebaseKey;
+            const media = item.mediaUrl ? formatMediaHtml(item.mediaUrl) : '';
+            const contentPrev = item.content && item.content.length > 100 ? item.content.substring(0, 100) + '...' : (item.content || '');
+            const interp = item.interpretation ? `<div style="font-size: 14px; color: #555; background: #f9f9f9; padding: 8px; border-radius: 4px; margin-bottom: 8px;"><strong>💡 領受與解讀：</strong>${item.interpretation}</div>` : '';
+            const recipBottom = item.recipient ? `<div style="font-size: 13px; color: #555; margin-bottom: 8px;"><strong>👤 領受者：</strong>${item.recipient}</div>` : '';
             
-            const interpretationHtml = item.interpretation 
-                ? `<div style="font-size: 14px; color: #555; background: #f9f9f9; padding: 8px; border-radius: 4px; margin-bottom: 8px;"><strong>💡 領受與解讀：</strong>${item.interpretation}</div>` 
-                : '';
+            let tagsStr = '';
+            if (item.tags) {
+                const cleanTags = item.tags.replace(/,/g, ' #');
+                tagsStr = `<div style="font-size: 12px; color: #0066cc; margin-bottom: 8px;">#${cleanTags}</div>`;
+            }
 
-            const tagsHtml = item.tags 
-                ? `<div style="font-size: 12px; color: #0066cc; margin-bottom: 8px;">#${item.tags.replace(/,/g, ' #')}</div>` 
-                : '';
+            const scriptureLink = item.scriptureRef ? `<a href="https://www.google.com/search?q=聖經+${encodeURIComponent(item.scriptureRef)}" target="_blank" class="web-link">📖 ${item.scriptureRef}</a>` : '';
+            const searchQuery = item.title || (item.content ? item.content.substring(0, 15) : '');
+            const webSearch = searchQuery ? `<a href="https://www.google.com/search?q=${encodeURIComponent(searchQuery)}" target="_blank" class="web-link">🌐 網路新聞/文章查詢</a>` : '';
 
             return `
                 <div class="card">
                     <div class="card-header">
-                        <span>📅 ${item.occurredAt || '未知日期'}${recipientHeaderHtml}</span>
-                        <span>🏷️ ${item.type || '未分類'} | 狀態: ${item.status || '未設定'}</span>
+                        <span>📅 ${dateStr}${recipientText}</span>
+                        <span>🏷️ ${typeStatus}</span>
                     </div>
-                    <h3 class="card-title" onclick="viewDetail('${item.firebaseKey}')" title="點擊檢視全文">${item.title || '無標題'}</h3>
-                    ${mediaHtml}
-                    <div class="card-content">${previewContent}</div>
-                    ${interpretationHtml}
-                    ${recipientBottomHtml}
-                    ${tagsHtml}
-                    
+                    <h3 class="card-title" onclick="viewDetail('${key}')" title="點擊檢視全文">${titleText}</h3>
+                    ${media}
+                    <div class="card-content">${contentPrev}</div>
+                    ${interp}
+                    ${recipBottom}
+                    ${tagsStr}
                     <div class="card-footer">
                         <div class="link-group">
-                            ${scriptureHtml}
-                            ${webSearchHtml}
+                            ${scriptureLink}
+                            ${webSearch}
                         </div>
                         <div class="action-btns">
-                            <button class="btn-edit" onclick="openEditModal('${item.firebaseKey}')">修改</button>
-                            <button class="btn-delete" onclick="deleteItem('${item.firebaseKey}')">刪除</button>
+                            <button class="btn-edit" onclick="openEditModal('${key}')">修改</button>
+                            <button class="btn-delete" onclick="deleteItem('${key}')">刪除</button>
                         </div>
                     </div>
                 </div>
@@ -1469,7 +1530,7 @@
         if (relatedItems.length > 0) {
             relatedContainer.innerHTML = relatedItems.map(r => `
                 <div style="background: #f0f4f8; padding: 10px 12px; border-radius: 6px; margin-bottom: 8px; cursor: pointer; border: 1px solid #d1e0ee;" onclick="closePrayerDetailModal(); switchTab('revelation'); viewDetail('${r.firebaseKey}')">
-                    <div style="font-weight: bold; color: #0066cc;">☁️ [${r.type || '異夢'}] ${r.title || '無標題'}</div>
+                    <div style="font-weight: bold; color: #0066cc;">☁️️ [${r.type || '異夢'}] ${r.title || '無標題'}</div>
                     <div style="font-size: 12px; color: #555; margin-top: 3px;">📅 發生日期：${r.occurredAt || '未知'} | 點擊前往檢視 ➔</div>
                 </div>
             `).join('');
