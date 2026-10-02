@@ -443,7 +443,7 @@
         </div>
 
         <div class="controls-row">
-            <input type="text" id="searchInput" class="search-bar" placeholder="🔍 輸入關鍵字搜尋標題, 內容, 經文, 領受者或標籤..." oninput="filterData()">
+            <input type="text" id="searchInput" class="search-bar" placeholder="🔍 輸入關鍵字搜尋標題、內容、經文、領受者或標籤..." oninput="filterData()">
             <select id="viewModeSelect" class="sort-select" onchange="filterData()">
                 <option value="card">📄 卡片清單檢視</option>
                 <option value="timeline">⏳ 視覺化時間軸</option>
@@ -842,7 +842,7 @@
     let booksData = [];
     let currentCategory = '全部';
     let currentTag = '';
-    const databaseUrl = "https://revelation-sync-default-rtdb.firebaseio.com/";
+    const databaseUrl = "https://revelation-sync-default-rtdb.firebaseio.com"; // 💡 已移除結尾斜線以防路徑錯誤
 
     let mediaRecorder;
     let audioChunks = [];
@@ -1068,7 +1068,7 @@
         cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">同步中...</div>`;
 
         try {
-            const response = await fetch(databaseUrl + ".json");
+            const response = await fetch(`${databaseUrl}/.json`);
             const data = await response.json();
             
             if (data) {
@@ -1142,7 +1142,7 @@
             }
         } catch (error) {
             console.error(error);
-            cardList.innerHTML = `<div style="text-align: center; color: red; padding: 40px;">同步失敗，請檢查網路連線</div>`;
+            cardList.innerHTML = `<div style="text-align: center; color: red; padding: 40px;">同步失敗，請檢查網路連線或主控台權限</div>`;
         }
     }
 
@@ -1546,7 +1546,7 @@
         };
 
         try {
-            const response = await fetch(databaseUrl + ".json", {
+            const response = await fetch(`${databaseUrl}/.json`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newItem)
@@ -1577,7 +1577,7 @@
         };
 
         try {
-            const response = await fetch(databaseUrl + ".json", {
+            const response = await fetch(`${databaseUrl}/.json`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newPrayer)
