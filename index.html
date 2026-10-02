@@ -414,7 +414,7 @@
 
 <div class="container">
     <header>
-        <h1>☁️️ 神國拼圖紀錄與代禱系統</h1>
+        <h1>☁️ 神國拼圖紀錄與代禱系統</h1>
         <div class="header-btns">
             <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importDataBackup(this)">
             <button class="btn-secondary" onclick="document.getElementById('importFile').click()">📤 匯入備份還原</button>
@@ -441,7 +441,7 @@
         </div>
 
         <div class="tag-cloud">
-            <div class="tag-cloud-title">🏷️️ 熱門關鍵字列表（前 10 名，點擊可直接檢視對應記錄）</div>
+            <div class="tag-cloud-title">🏷️ 熱門關鍵字列表（前 10 名，點擊可直接檢視對應記錄）</div>
             <div class="tag-chips" id="tagChips">
                 <span style="color: #888; font-size: 13px;">載入後顯示關鍵字...</span>
             </div>
@@ -671,7 +671,7 @@
         <h3 id="detailTitle" style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;"></h3>
         <div class="detail-row"><b>📅 發生日期：</b><span id="detailDate"></span></div>
         <div class="detail-row" id="detailRecipientContainer"><b>👤 領受者：</b><span id="detailRecipient"></span></div>
-        <div class="detail-row"><b>🏷️ 類型與狀態：</b><span id="detailTypeStatus"></span></div>
+        <div class="detail-row"><b>🏷️️ 類型與狀態：</b><span id="detailTypeStatus"></span></div>
         <div class="detail-row" id="detailScriptureContainer"><b>📖 經文參考：</b><span id="detailScripture"></span></div>
         <div class="detail-row" id="detailInterpContainer"><b>💡 領受與解讀：</b><div id="detailInterp" style="background: #f9f9f9; padding: 8px; border-radius: 4px; margin-top: 4px;"></div></div>
         <div class="detail-row" id="detailMediaContainer" style="display: none;"><b>🖼️ 附件媒體：</b><div id="detailMedia" style="margin-top: 6px;"></div></div>
@@ -887,7 +887,7 @@
         { theme: "弗 / 屬靈軍裝", ref: "以弗所書 6:11", text: "要穿戴神所賜的全副軍裝，就能抵擋魔鬼的詭計。" },
         { theme: "腓 / 一無掛慮", ref: "腓立比書 4:6-7", text: "應當一無掛慮，只要凡事藉著禱告、祈求和感謝，將你們所要的告訴神。神所賜出人意外的平安，必在基督耶穌裡保守你們的心懷意念。" },
         { theme: "西 / 榮神益人", ref: "歌羅西書 3:23", text: "無論做什麼，都要從心裡做，像是給主做的，不是給人做的。" },
-        { theme: "來 / 信心的實底", ref: "希伯來書 11:1", text: "信就是所望之事的地實，是未見之事的確據。" },
+        { theme: "來 / 信心的實底", ref: "希伯來書 11:1", text: "信就是所望之事的實底，是未見之事的確據。" },
         { theme: "雅 / 雅各書禱告", ref: "雅各書 5:16", text: "義人祈禱所發的力量是大有功效的。" },
         { theme: "彼前 / 卸憂慮", ref: "彼得前書 5:7", text: "你們要將一切的憂慮卸給神，因為他顧念你們。" },
         { theme: "約一 / 愛裡沒有懼怕", ref: "約翰一書 4:18", text: "愛裡沒有懼怕；愛既完全，就把懼怕除去。" },
@@ -970,7 +970,7 @@
         reader.readAsText(file);
     }
 
-    // 📄 直接下載為 PDF 檔案
+    // 📄 使用 html2pdf 套件直接下載 PDF
     function exportToPDFReport() {
         let reportDiv = document.createElement('div');
         reportDiv.style.padding = '30px';
