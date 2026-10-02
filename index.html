@@ -443,7 +443,7 @@
         </div>
 
         <div class="controls-row">
-            <input type="text" id="searchInput" class="search-bar" placeholder="🔍 輸入關鍵字搜尋標題、內容、經文、領受者或標籤..." oninput="filterData()">
+            <input type="text" id="searchInput" class="search-bar" placeholder="🔍 輸入關鍵字搜尋標題, 內容, 經文, 領受者或標籤..." oninput="filterData()">
             <select id="viewModeSelect" class="sort-select" onchange="filterData()">
                 <option value="card">📄 卡片清單檢視</option>
                 <option value="timeline">⏳ 視覺化時間軸</option>
@@ -1062,7 +1062,7 @@
         }
     }
 
-    // 💡 升級版全域遞迴掃描同步引擎：確保無論資料在 Firebase 裡如何巢狀存放，都能全部找出來
+    // 全域遞迴掃描同步引擎
     async function fetchDreams() {
         const cardList = document.getElementById('cardList');
         cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">同步中...</div>`;
@@ -1075,22 +1075,18 @@
                 let extractedItems = [];
                 let extractedBooks = [];
 
-                // 遞迴掃描 Firebase JSON 樹狀結構中的所有節點
                 function scanNode(obj, path = '') {
                     if (!obj || typeof obj !== 'object') return;
 
-                    // 如果是書櫃節點
                     if (path === 'bookshelf' || path.startsWith('bookshelf/')) {
                         return;
                     }
 
-                    // 判斷此物件是否為一筆有效記錄（異夢、異象、啟示或代禱）
                     if (obj.title || obj.type === '代禱') {
                         extractedItems.push({ firebaseKey: path, ...obj });
-                        return; // 找到後即停止往下，避免重複
+                        return;
                     }
 
-                    // 繼續向下遞迴
                     Object.keys(obj).forEach(key => {
                         const subPath = path ? `${path}/${key}` : key;
                         if (key === 'bookshelf') {
@@ -1108,7 +1104,6 @@
 
                 scanNode(data);
 
-                // 若書櫃為空則自動初始化
                 if (extractedBooks.length === 0) {
                     const defaultBook = {
                         title: "數位刊物第一冊（Time for Taiwan）",
