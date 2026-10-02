@@ -412,7 +412,7 @@
 
 <div class="container">
     <header>
-        <h1>☁️️ 神國拼圖紀錄與代禱系統</h1>
+        <h1>☁️ 神國拼圖紀錄與代禱系統</h1>
         <div class="header-btns">
             <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importDataBackup(this)">
             <button class="btn-secondary" onclick="document.getElementById('importFile').click()">📤 匯入備份還原</button>
@@ -668,7 +668,7 @@
         <h3 id="detailTitle" style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;"></h3>
         <div class="detail-row"><b>📅 發生日期：</b><span id="detailDate"></span></div>
         <div class="detail-row" id="detailRecipientContainer"><b>👤 領受者：</b><span id="detailRecipient"></span></div>
-        <div class="detail-row"><b>🏷️️ 類型與狀態：</b><span id="detailTypeStatus"></span></div>
+        <div class="detail-row"><b>🏷️ 類型與狀態：</b><span id="detailTypeStatus"></span></div>
         <div class="detail-row" id="detailScriptureContainer"><b>📖 經文參考：</b><span id="detailScripture"></span></div>
         <div class="detail-row" id="detailInterpContainer"><b>💡 領受與解讀：</b><div id="detailInterp" style="background: #f9f9f9; padding: 8px; border-radius: 4px; margin-top: 4px;"></div></div>
         <div class="detail-row" id="detailMediaContainer" style="display: none;"><b>🖼️ 附件媒體：</b><div id="detailMedia" style="margin-top: 6px;"></div></div>
@@ -917,7 +917,8 @@
                 const backupData = JSON.parse(content);
                 if (confirm("確定要將備份檔案中的資料還原並覆蓋至雲端資料庫嗎？")) {
                     if (backupData.revelations) {
-                        for (let item of backupData.revelations) {
+                        for (let i = 0; i < backupData.revelations.length; i++) {
+                            let item = backupData.revelations[i];
                             let key = item.firebaseKey;
                             delete item.firebaseKey;
                             if (key) {
@@ -936,7 +937,8 @@
                         }
                     }
                     if (backupData.bookshelf) {
-                        for (let book of backupData.bookshelf) {
+                        for (let j = 0; j < backupData.bookshelf.length; j++) {
+                            let book = backupData.bookshelf[j];
                             let bKey = book.bookKey;
                             delete book.bookKey;
                             if (bKey && bKey !== 'default_init') {
@@ -992,25 +994,22 @@
     function renderScriptureResults(items) {
         const container = document.getElementById('scriptureSearchResultList');
         if (items.length === 0) {
-            container.innerHTML = `<div style="text-align: center; color: #888; padding: 20px;">沒有找到相關的經文，您可透過上方「自訂任意經文」直接新增！</div>`;
+            container.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">沒有找到相關的經文，您可透過上方「自訂任意經文」直接新增！</div>';
             return;
         }
 
-        container.innerHTML = items.map(item => {
-            const cardTheme = item.theme;
-            const cardRef = item.ref;
-            const cardText = item.text;
-            return `
-                <div class="scripture-card">
-                    <div style="font-weight: bold; color: #0066cc; margin-bottom: 4px;">📌 [${cardTheme}] ${cardRef}</div>
-                    <div style="font-size: 14px; color: #333; margin-bottom: 8px;">${cardText}</div>
-                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                        <button type="button" class="btn-success" style="padding: 4px 10px; font-size: 12px;" onclick="insertScriptureToRef('${cardRef}')">➕ 填入經文參考欄</button>
-                        <button type="button" class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="insertScriptureToContent('${cardRef}：${cardText}')">📝 插入至文章內文</button>
-                    </div>
-                </div>
-            `;
-        }).join('');
+        let html = '';
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            html += '<div class="scripture-card">';
+            html += '<div style="font-weight: bold; color: #0066cc; margin-bottom: 4px;">📌 [' + item.theme + '] ' + item.ref + '</div>';
+            html += '<div style="font-size: 14px; color: #333; margin-bottom: 8px;">' + item.text + '</div>';
+            html += '<div style="display: flex; gap: 8px; justify-content: flex-end;">';
+            html += '<button type="button" class="btn-success" style="padding: 4px 10px; font-size: 12px;" onclick="insertScriptureToRef(\'' + item.ref + '\')">➕ 填入經文參考欄</button>';
+            html += '<button type="button" class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="insertScriptureToContent(\'' + item.ref + '：' + item.text + '\')">📝 插入至文章內文</button>';
+            html += '</div></div>';
+        }
+        container.innerHTML = html;
     }
 
     function insertScriptureToRef(refText) {
@@ -1018,7 +1017,7 @@
             const inputEl = document.getElementById(activeScriptureId);
             if (inputEl) {
                 inputEl.value = refText;
-                alert(`已成功將「${refText}」填入經文參考！`);
+                alert('已成功將「' + refText + '」填入經文參考！');
             }
         }
         closeScriptureSearchModal();
@@ -1029,11 +1028,11 @@
             const contentEl = document.getElementById(activeContentId);
             if (contentEl) {
                 if (contentEl.value) {
-                    contentEl.value += `\n\n相關經文參考：${fullText}`;
+                    contentEl.value += '\n\n相關經文參考：' + fullText;
                 } else {
-                    contentEl.value = `相關經文參考：${fullText}`;
+                    contentEl.value = '相關經文參考：' + fullText;
                 }
-                alert(`已成功將經文插入至文章內文結尾！`);
+                alert('已成功將經文插入至文章內文結尾！');
             }
         }
         closeScriptureSearchModal();
@@ -1043,10 +1042,10 @@
         const ref = document.getElementById('customScriptureRefInput').value.trim();
         const text = document.getElementById('customScriptureTextInput').value.trim();
         if (!ref || !text) {
-            alert("請完整輸入經文出處與內容！");
+            alert('請完整輸入經文出處與內容！');
             return;
         }
-        insertScriptureToContent(`${ref}：${text}`);
+        insertScriptureToContent(ref + '：' + text);
         if (activeScriptureId) {
             document.getElementById(activeScriptureId).value = ref;
         }
@@ -1078,16 +1077,16 @@
             const reader = new FileReader();
             reader.onload = function (e) {
                 document.getElementById(targetId).value = e.target.result;
-                alert("檔案載入成功！");
+                alert('檔案載入成功！');
             };
             reader.readAsDataURL(file);
         }
     }
 
     async function toggleVoiceRecording(type) {
-        const btn = document.getElementById(`${type}RecordBtn`);
-        const status = document.getElementById(`${type}RecordStatus`);
-        const urlInput = document.getElementById(`${type}MediaUrl`);
+        const btn = document.getElementById(type + 'RecordBtn');
+        const status = document.getElementById(type + 'RecordStatus');
+        const urlInput = document.getElementById(type + 'MediaUrl');
 
         if (!isRecording) {
             try {
@@ -1104,36 +1103,36 @@
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         urlInput.value = e.target.result;
-                        status.textContent = "🎙️ 語音錄製完成並已自動填入！";
-                        alert("語音備忘錄錄製成功！");
+                        status.textContent = '🎙️ 語音錄製完成並已自動填入！';
+                        alert('語音備忘錄錄製成功！');
                     };
                     reader.readAsDataURL(audioBlob);
                 };
 
                 mediaRecorder.start();
                 isRecording = true;
-                btn.textContent = "⏹️ 停止錄音";
-                btn.style.backgroundColor = "#dc3545";
-                status.textContent = "🔴 正在錄音中...";
+                btn.textContent = '⏹️ 停止錄音';
+                btn.style.backgroundColor = '#dc3545';
+                status.textContent = '🔴 正在錄音中...';
             } catch (err) {
-                alert("無法存取麥克風，請確認瀏覽器權限。");
+                alert('無法存取麥克風，請確認瀏覽器權限。');
                 console.error(err);
             }
         } else {
             mediaRecorder.stop();
             isRecording = false;
-            btn.textContent = "🔴 開始錄音";
-            btn.style.backgroundColor = "#4a90e2";
+            btn.textContent = '🔴 開始錄音';
+            btn.style.backgroundColor = '#4a90e2';
         }
     }
 
     // 全域遞迴掃描同步引擎
     async function fetchDreams() {
         const cardList = document.getElementById('cardList');
-        cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">同步中...</div>`;
+        cardList.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">同步中...</div>';
 
         try {
-            const response = await fetch(`${databaseUrl}/.json`);
+            const response = await fetch(databaseUrl + '/.json');
             const data = await response.json();
             
             if (data) {
@@ -1153,7 +1152,7 @@
                     }
 
                     Object.keys(obj).forEach(key => {
-                        const subPath = path ? `${path}/${key}` : key;
+                        const subPath = path ? path + '/' + key : key;
                         if (key === 'bookshelf') {
                             let bVal = obj[key];
                             if (bVal && typeof bVal === 'object') {
@@ -1175,7 +1174,7 @@
                         description: "收錄時間與地區相關的數位出版與異象內容。",
                         url: "https://online.fliphtml5.com/timefortaiwan/azpb/#p=1"
                     };
-                    await fetch(`${databaseUrl}/bookshelf.json`, {
+                    await fetch(databaseUrl + '/bookshelf.json', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(defaultBook)
@@ -1195,19 +1194,19 @@
                     description: "收錄時間與地區相關的數位出版與異象內容。",
                     url: "https://online.fliphtml5.com/timefortaiwan/azpb/#p=1"
                 };
-                await fetch(`${databaseUrl}/bookshelf.json`, {
+                await fetch(databaseUrl + '/bookshelf.json', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(defaultBook)
                 });
                 booksData = [{ bookKey: 'default_init', ...defaultBook }];
                 originalData = [];
-                cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">目前沒有資料</div>`;
+                cardList.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">目前沒有資料</div>';
                 renderBookShelfList();
             }
         } catch (error) {
             console.error(error);
-            cardList.innerHTML = `<div style="text-align: center; color: red; padding: 40px;">同步失敗，請檢查網路連線或主控台權限</div>`;
+            cardList.innerHTML = '<div style="text-align: center; color: red; padding: 40px;">同步失敗，請檢查網路連線或主控台權限</div>';
         }
     }
 
@@ -1257,7 +1256,7 @@
         const tagChipsContainer = document.getElementById('tagChips');
         
         if (sortedTags.length === 0) {
-            tagChipsContainer.innerHTML = `<span style="color: #888; font-size: 13px;">目前沒有設定任何標籤關鍵字</span>`;
+            tagChipsContainer.innerHTML = '<span style="color: #888; font-size: 13px;">目前沒有設定任何標籤關鍵字</span>';
             return;
         }
 
@@ -1341,98 +1340,86 @@
                 videoId = url.split('v=')[1]?.substring(0, 11);
             }
             if (videoId) {
-                return `<div style="margin-bottom: 10px;"><iframe width="100%" height="220" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen style="border-radius: 6px;"></iframe></div>`;
+                return '<div style="margin-bottom: 10px;"><iframe width="100%" height="220" src="https://www.youtube.com/embed/' + videoId + '" frameborder="0" allowfullscreen style="border-radius: 6px;"></iframe></div>';
             }
         }
         if (url.startsWith('data:audio') || url.endsWith('.mp3') || url.endsWith('.wav')) {
-            return `<div style="margin-bottom: 10px;"><audio controls src="${url}" style="width: 100%;"></audio></div>`;
+            return '<div style="margin-bottom: 10px;"><audio controls src="' + url + '" style="width: 100%;"></audio></div>';
         }
-        return `<div style="margin-bottom: 10px;"><img src="${url}" style="max-width: 100%; max-height: 250px; border-radius: 6px;" alt="附件媒體"></div>`;
+        return '<div style="margin-bottom: 10px;"><img src="' + url + '" style="max-width: 100%; max-height: 250px; border-radius: 6px;" alt="附件媒體"></div>';
     }
 
     function renderTimeline(items) {
         const cardList = document.getElementById('cardList');
         if (items.length === 0) {
-            cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">沒有找到符合條件的時間軸記錄</div>`;
+            cardList.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">沒有找到符合條件的時間軸記錄</div>';
             return;
         }
 
-        cardList.innerHTML = `
-            <div class="timeline-container">
-                ${items.map(item => {
-                    const recipientText = item.recipient ? ` | 領受者: ${item.recipient}` : '';
-                    const previewContent = item.content && item.content.length > 80 ? item.content.substring(0, 80) + '...' : (item.content || '');
-                    return `
-                        <div class="timeline-item">
-                            <div class="card-header">
-                                <span>📅 ${item.occurredAt \vert{}\vert{} '未知日期'}${recipientText}</span>
-                                <span>🏷️ ${item.type \vert{}\vert{} '未分類'} \vert{} 狀態: ${item.status || '未設定'}</span>
-                            </div>
-                            <h3 class="card-title" onclick="viewDetail('${item.firebaseKey}')">${item.title || '無標題'}</h3>
-                            <div class="card-content">${previewContent}</div>
-                            <div style="text-align: right;">
-                                <button class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="viewDetail('${item.firebaseKey}')">完整檢視</button>
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-        `;
+        let html = '<div class="timeline-container">';
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            const recipientText = item.recipient ? ' | 領受者: ' + item.recipient : '';
+            const previewContent = item.content && item.content.length > 80 ? item.content.substring(0, 80) + '...' : (item.content || '');
+            const dateStr = item.occurredAt || '未知日期';
+            const typeStatus = (item.type || '未分類') + ' | 狀態: ' + (item.status || '未設定');
+            const title = item.title || '無標題';
+            const key = item.firebaseKey;
+
+            html += '<div class="timeline-item">';
+            html += '<div class="card-header"><span>📅 ' + dateStr + recipientText + '</span><span>🏷️ ' + typeStatus + '</span></div>';
+            html += '<h3 class="card-title" onclick="viewDetail(\'' + key + '\')">' + title + '</h3>';
+            html += '<div class="card-content">' + previewContent + '</div>';
+            html += '<div style="text-align: right;"><button class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="viewDetail(\'' + key + '\')">完整檢視</button></div>';
+            html += '</div>';
+        }
+        html += '</div>';
+        cardList.innerHTML = html;
     }
 
     function renderDreams(items) {
         const cardList = document.getElementById('cardList');
         if (items.length === 0) {
-            cardList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">沒有找到符合條件的記錄</div>`;
+            cardList.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">沒有找到符合條件的記錄</div>';
             return;
         }
 
-        cardList.innerHTML = items.map(item => {
+        let html = '';
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
             const dateStr = item.occurredAt || '未知日期';
-            const recipientText = item.recipient ? ` | 領受者: ${item.recipient}` : '';
-            const typeStatus = `${item.type || '未分類'} | 狀態: ${item.status || '未設定'}`;
+            const recipientText = item.recipient ? ' | 領受者: ' + item.recipient : '';
+            const typeStatus = (item.type || '未分類') + ' | 狀態: ' + (item.status || '未設定');
             const titleText = item.title || '無標題';
             const key = item.firebaseKey;
             const media = item.mediaUrl ? formatMediaHtml(item.mediaUrl) : '';
             const contentPrev = item.content && item.content.length > 100 ? item.content.substring(0, 100) + '...' : (item.content || '');
-            const interp = item.interpretation ? `<div style="font-size: 14px; color: #555; background: #f9f9f9; padding: 8px; border-radius: 4px; margin-bottom: 8px;"><strong>💡 領受與解讀：</strong>${item.interpretation}</div>` : '';
-            const recipBottom = item.recipient ? `<div style="font-size: 13px; color: #555; margin-bottom: 8px;"><strong>👤 領受者：</strong>${item.recipient}</div>` : '';
+            const interp = item.interpretation ? '<div style="font-size: 14px; color: #555; background: #f9f9f9; padding: 8px; border-radius: 4px; margin-bottom: 8px;"><strong>💡 領受與解讀：</strong>' + item.interpretation + '</div>' : '';
+            const recipBottom = item.recipient ? '<div style="font-size: 13px; color: #555; margin-bottom: 8px;"><strong>👤 領受者：</strong>' + item.recipient + '</div>' : '';
             
             let tagsStr = '';
             if (item.tags) {
                 const cleanTags = item.tags.replace(/,/g, ' #');
-                tagsStr = `<div style="font-size: 12px; color: #0066cc; margin-bottom: 8px;">#${cleanTags}</div>`;
+                tagsStr = '<div style="font-size: 12px; color: #0066cc; margin-bottom: 8px;">#' + cleanTags + '</div>';
             }
 
-            const scriptureLink = item.scriptureRef ? `<a href="https://www.google.com/search?q=聖經+${encodeURIComponent(item.scriptureRef)}" target="_blank" class="web-link">📖 ${item.scriptureRef}</a>` : '';
+            const scriptureLink = item.scriptureRef ? '<a href="https://www.google.com/search?q=聖經+' + encodeURIComponent(item.scriptureRef) + '" target="_blank" class="web-link">📖 ' + item.scriptureRef + '</a>' : '';
             const searchQuery = item.title || (item.content ? item.content.substring(0, 15) : '');
-            const webSearch = searchQuery ? `<a href="https://www.google.com/search?q=${encodeURIComponent(searchQuery)}" target="_blank" class="web-link">🌐 網路新聞/文章查詢</a>` : '';
+            const webSearch = searchQuery ? '<a href="https://www.google.com/search?q=' + encodeURIComponent(searchQuery) + '" target="_blank" class="web-link">🌐 網路新聞/文章查詢</a>' : '';
 
-            return `
-                <div class="card">
-                    <div class="card-header">
-                        <span>📅 ${dateStr}${recipientText}</span>
-                        <span>🏷️ ${typeStatus}</span>
-                    </div>
-                    <h3 class="card-title" onclick="viewDetail('${key}')" title="點擊檢視全文">${titleText}</h3>
-                    ${media}
-                    <div class="card-content">${contentPrev}</div>
-                    ${interp}
-                    ${recipBottom}
-                    ${tagsStr}
-                    <div class="card-footer">
-                        <div class="link-group">
-                            ${scriptureLink}
-                            ${webSearch}
-                        </div>
-                        <div class="action-btns">
-                            <button class="btn-edit" onclick="openEditModal('${key}')">修改</button>
-                            <button class="btn-delete" onclick="deleteItem('${key}')">刪除</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
+            html += '<div class="card">';
+            html += '<div class="card-header"><span>📅 ' + dateStr + recipientText + '</span><span>🏷️ ' + typeStatus + '</span></div>';
+            html += '<h3 class="card-title" onclick="viewDetail(\'' + key + '\')" title="點擊檢視全文">' + titleText + '</h3>';
+            html += media;
+            html += '<div class="card-content">' + contentPrev + '</div>';
+            html += interp;
+            html += recipBottom;
+            html += tagsStr;
+            html += '<div class="card-footer"><div class="link-group">' + scriptureLink + webSearch + '</div>';
+            html += '<div class="action-btns"><button class="btn-edit" onclick="openEditModal(\'' + key + '\')">修改</button>';
+            html += '<button class="btn-delete" onclick="deleteItem(\'' + key + '\')">刪除</button></div></div></div>';
+        }
+        cardList.innerHTML = html;
     }
 
     function filterPrayers() {
@@ -1453,33 +1440,28 @@
     function renderPrayers(items) {
         const prayerList = document.getElementById('prayerCardList');
         if (items.length === 0) {
-            prayerList.innerHTML = `<div style="text-align: center; color: #888; padding: 40px;">沒有找到符合的代禱項目</div>`;
+            prayerList.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">目前沒有代禱項目</div>';
             return;
         }
 
-        prayerList.innerHTML = items.map(item => {
-            const previewContent = item.content && item.content.length > 100 
-                ? item.content.substring(0, 100) + '...' 
-                : (item.content || '');
+        let html = '';
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            const previewContent = item.content && item.content.length > 100 ? item.content.substring(0, 100) + '...' : (item.content || '');
+            const dateStr = item.occurredAt || '未知時間';
+            const prayerItem = item.prayerItem || '未分類';
+            const title = item.title || '無主題';
+            const key = item.firebaseKey;
 
-            return `
-                <div class="card">
-                    <div class="card-header">
-                        <span>📅 日期時間：${item.occurredAt || '未知時間'}</span>
-                        <span>🙏 代禱項目：<b>${item.prayerItem || '未分類'}</b></span>
-                    </div>
-                    <h3 class="card-title" onclick="viewPrayerDetail('${item.firebaseKey}')" title="點擊檢視全文">📌 主題：${item.title || '無主題'}</h3>
-                    <div class="card-content" onclick="viewPrayerDetail('${item.firebaseKey}')" style="cursor: pointer;" title="點擊檢視全文">${previewContent}</div>
-                    <div class="card-footer">
-                        <span style="font-size: 12px; color: #888;">ID: ${item.firebaseKey}</span>
-                        <div class="action-btns">
-                            <button class="btn-edit" onclick="openEditPrayerModal('${item.firebaseKey}')">修改</button>
-                            <button class="btn-delete" onclick="deleteItem('${item.firebaseKey}')">刪除</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
+            html += '<div class="card">';
+            html += '<div class="card-header"><span>📅 日期時間：' + dateStr + '</span><span>🙏 代禱項目：<b>' + prayerItem + '</b></span></div>';
+            html += '<h3 class="card-title" onclick="viewPrayerDetail(\'' + key + '\')" title="點擊檢視全文">📌 主題：' + title + '</h3>';
+            html += '<div class="card-content" onclick="viewPrayerDetail(\'' + key + '\')" style="cursor: pointer;" title="點擊檢視全文">' + previewContent + '</div>';
+            html += '<div class="card-footer"><span style="font-size: 12px; color: #888;">ID: ' + key + '</span>';
+            html += '<div class="action-btns"><button class="btn-edit" onclick="openEditPrayerModal(\'' + key + '\')">修改</button>';
+            html += '<button class="btn-delete" onclick="deleteItem(\'' + key + '\')">刪除</button></div></div></div>';
+        }
+        prayerList.innerHTML = html;
     }
 
     function openAddModal() {
@@ -1506,14 +1488,14 @@
         const item = originalData.find(d => d.firebaseKey === firebaseKey);
         if (!item) return;
 
-        document.getElementById('prayerDetailTitle').textContent = `📌 主題：${item.title || '無主題'}`;
+        document.getElementById('prayerDetailTitle').textContent = '📌 主題：' + (item.title || '無主題');
         document.getElementById('prayerDetailDate').textContent = item.occurredAt || '未知時間';
         document.getElementById('prayerDetailItem').textContent = item.prayerItem || '未分類';
         document.getElementById('prayerDetailContent').textContent = item.content || '（無內容）';
 
         const scriptureContainer = document.getElementById('prayerDetailScriptureContainer');
         if (item.scriptureRef) {
-            document.getElementById('prayerDetailScripture').innerHTML = `<a href="https://www.google.com/search?q=聖經+${encodeURIComponent(item.scriptureRef)}" target="_blank" class="web-link">📖 ${item.scriptureRef}</a>`;
+            document.getElementById('prayerDetailScripture').innerHTML = '<a href="https://www.google.com/search?q=聖經+' + encodeURIComponent(item.scriptureRef) + '" target="_blank" class="web-link">📖 ' + item.scriptureRef + '</a>';
             scriptureContainer.style.display = 'block';
         } else {
             scriptureContainer.style.display = 'none';
@@ -1528,14 +1510,17 @@
         });
 
         if (relatedItems.length > 0) {
-            relatedContainer.innerHTML = relatedItems.map(r => `
-                <div style="background: #f0f4f8; padding: 10px 12px; border-radius: 6px; margin-bottom: 8px; cursor: pointer; border: 1px solid #d1e0ee;" onclick="closePrayerDetailModal(); switchTab('revelation'); viewDetail('${r.firebaseKey}')">
-                    <div style="font-weight: bold; color: #0066cc;">☁️️ [${r.type || '異夢'}] ${r.title || '無標題'}</div>
-                    <div style="font-size: 12px; color: #555; margin-top: 3px;">📅 發生日期：${r.occurredAt || '未知'} | 點擊前往檢視 ➔</div>
-                </div>
-            `).join('');
+            let relHtml = '';
+            for (let i = 0; i < relatedItems.length; i++) {
+                const r = relatedItems[i];
+                relHtml += '<div style="background: #f0f4f8; padding: 10px 12px; border-radius: 6px; margin-bottom: 8px; cursor: pointer; border: 1px solid #d1e0ee;" onclick="closePrayerDetailModal(); switchTab(\'revelation\'); viewDetail(\'' + r.firebaseKey + '\')">';
+                relHtml += '<div style="font-weight: bold; color: #0066cc;">☁️ [' + (r.type || '異夢') + '] ' + (r.title || '無標題') + '</div>';
+                relHtml += '<div style="font-size: 12px; color: #555; margin-top: 3px;">📅 發生日期：' + (r.occurredAt || '未知') + ' | 點擊前往檢視 ➔</div>';
+                relHtml += '</div>';
+            }
+            relatedContainer.innerHTML = relHtml;
         } else {
-            relatedContainer.innerHTML = `<span style="color: #888; font-size: 13px;">目前沒有找到與此代禱直接相關的異象、異夢或啟示記錄。</span>`;
+            relatedContainer.innerHTML = '<span style="color: #888; font-size: 13px;">目前沒有找到與此代禱直接相關的異象、異夢或啟示記錄。</span>';
         }
 
         document.getElementById('prayerDetailModal').style.display = 'flex';
@@ -1580,7 +1565,7 @@
         };
 
         try {
-            const response = await fetch(`${databaseUrl}/${firebaseKey}.json`, {
+            const response = await fetch(databaseUrl + '/' + firebaseKey + '.json', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedPrayer)
@@ -1615,7 +1600,7 @@
         };
 
         try {
-            const response = await fetch(`${databaseUrl}/.json`, {
+            const response = await fetch(databaseUrl + '/.json', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newItem)
@@ -1646,7 +1631,7 @@
         };
 
         try {
-            const response = await fetch(`${databaseUrl}/.json`, {
+            const response = await fetch(databaseUrl + '/.json', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newPrayer)
@@ -1680,11 +1665,11 @@
             recipientContainer.style.display = 'none';
         }
 
-        document.getElementById('detailTypeStatus').textContent = `${item.type || '未分類'} | 狀態: ${item.status || '未設定'}`;
+        document.getElementById('detailTypeStatus').textContent = (item.type || '未分類') + ' | 狀態: ' + (item.status || '未設定');
         
         const scriptureContainer = document.getElementById('detailScriptureContainer');
         if (item.scriptureRef) {
-            document.getElementById('detailScripture').innerHTML = `<a href="https://www.google.com/search?q=聖經+${encodeURIComponent(item.scriptureRef)}" target="_blank" class="web-link">📖 ${item.scriptureRef}</a>`;
+            document.getElementById('detailScripture').innerHTML = '<a href="https://www.google.com/search?q=聖經+' + encodeURIComponent(item.scriptureRef) + '" target="_blank" class="web-link">📖 ' + item.scriptureRef + '</a>';
             scriptureContainer.style.display = 'block';
         } else {
             scriptureContainer.style.display = 'none';
@@ -1708,7 +1693,7 @@
 
         const tagsContainer = document.getElementById('detailTagsContainer');
         if (item.tags) {
-            document.getElementById('detailTags').textContent = `#${item.tags.replace(/,/g, ' #')}`;
+            document.getElementById('detailTags').textContent = '#' + item.tags.replace(/,/g, ' #');
             tagsContainer.style.display = 'block';
         } else {
             tagsContainer.style.display = 'none';
@@ -1763,7 +1748,7 @@
         };
 
         try {
-            const response = await fetch(`${databaseUrl}/${firebaseKey}.json`, {
+            const response = await fetch(databaseUrl + '/' + firebaseKey + '.json', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedItem)
@@ -1786,7 +1771,7 @@
         if (!confirm("確定要刪除這筆記錄嗎？")) return;
 
         try {
-            const response = await fetch(`${databaseUrl}/${firebaseKey}.json`, {
+            const response = await fetch(databaseUrl + '/' + firebaseKey + '.json', {
                 method: 'DELETE'
             });
 
@@ -1812,23 +1797,23 @@
     function renderBookShelfList() {
         const listContainer = document.getElementById('bookShelfList');
         if (booksData.length === 0) {
-            listContainer.innerHTML = `<div style="text-align: center; color: #888; padding: 20px;">目前書櫃中沒有電子書，請點擊上方「新增電子書」加入。</div>`;
+            listContainer.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">目前書櫃中沒有電子書，請點擊上方「新增電子書」加入。</div>';
             return;
         }
 
-        listContainer.innerHTML = booksData.map(book => `
-            <div style="background: #f9f9f9; padding: 12px 16px; border-radius: 8px; border: 1px solid #e1e8ed; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <div>
-                    <h4 style="margin: 0 0 4px 0; color: #0066cc;">📖 ${book.title}</h4>
-                    <p style="margin: 0; font-size: 13px; color: #555;">${book.description || '無簡介'}</p>
-                </div>
-                <div style="display: flex; gap: 6px;">
-                    <button class="btn-primary" onclick="openBookViewer('${book.url}', '${book.title}')">立即翻閱</button>
-                    <button class="btn-secondary" onclick="openEditBookModal('${book.bookKey}')">修改</button>
-                    <button class="btn-delete" onclick="deleteBook('${book.bookKey}')">刪除</button>
-                </div>
-            </div>
-        `).join('');
+        let html = '';
+        for (let i = 0; i < booksData.length; i++) {
+            const book = booksData[i];
+            html += '<div style="background: #f9f9f9; padding: 12px 16px; border-radius: 8px; border: 1px solid #e1e8ed; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">';
+            html += '<div><h4 style="margin: 0 0 4px 0; color: #0066cc;">📖 ' + book.title + '</h4>';
+            html += '<p style="margin: 0; font-size: 13px; color: #555;">' + (book.description || '無簡介') + '</p></div>';
+            html += '<div style="display: flex; gap: 6px;">';
+            html += '<button class="btn-primary" onclick="openBookViewer(\'' + book.url + '\', \'' + book.title + '\')">立即翻閱</button>';
+            html += '<button class="btn-secondary" onclick="openEditBookModal(\'' + book.bookKey + '\')">修改</button>';
+            html += '<button class="btn-delete" onclick="deleteBook(\'' + book.bookKey + '\')">刪除</button>';
+            html += '</div></div>';
+        }
+        listContainer.innerHTML = html;
     }
 
     function openAddBookModal() {
@@ -1865,10 +1850,10 @@
             url: document.getElementById('bookUrlInput').value
         };
 
-        let url = `${databaseUrl}/bookshelf.json`;
+        let url = databaseUrl + '/bookshelf.json';
         let method = 'POST';
         if (bookKey) {
-            url = `${databaseUrl}/bookshelf/${bookKey}.json`;
+            url = databaseUrl + '/bookshelf/' + bookKey + '.json';
             method = 'PUT';
         }
 
@@ -1895,7 +1880,7 @@
     async function deleteBook(bookKey) {
         if (!confirm("確定要刪除這本書嗎？")) return;
         try {
-            const response = await fetch(`${databaseUrl}/bookshelf/${bookKey}.json`, {
+            const response = await fetch(databaseUrl + '/bookshelf/' + bookKey + '.json', {
                 method: 'DELETE'
             });
             if (response.ok) {
@@ -1910,7 +1895,7 @@
     }
 
     function openBookViewer(url, title) {
-        document.getElementById('bookViewerTitle').textContent = `📖 ${title}`;
+        document.getElementById('bookViewerTitle').textContent = '📖 ' + title;
         document.getElementById('bookIframe').src = url;
         document.getElementById('bookViewerModal').style.display = 'flex';
     }
