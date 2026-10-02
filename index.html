@@ -417,6 +417,7 @@
             <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importDataBackup(this)">
             <button class="btn-secondary" onclick="document.getElementById('importFile').click()">📤 匯入備份還原</button>
             <button class="btn-warning" onclick="exportDataBackup()">📥 匯出資料備份</button>
+            <button class="btn-success" onclick="exportToPDFReport()">📄 匯出PDF報告</button>
             <button class="btn-info" onclick="openBookShelf()">📚 電子書櫃</button>
             <button class="btn-primary" onclick="fetchDreams()">☁️ 同步資料</button>
         </div>
@@ -922,13 +923,13 @@
                             let key = item.firebaseKey;
                             delete item.firebaseKey;
                             if (key) {
-                                await fetch(`${databaseUrl}/${key}.json`, {
+                                await fetch(databaseUrl + '/' + key + '.json', {
                                     method: 'PUT',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify(item)
                                 });
                             } else {
-                                await fetch(`${databaseUrl}/.json`, {
+                                await fetch(databaseUrl + '/.json', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify(item)
@@ -942,13 +943,13 @@
                             let bKey = book.bookKey;
                             delete book.bookKey;
                             if (bKey && bKey !== 'default_init') {
-                                await fetch(`${databaseUrl}/bookshelf/${bKey}.json`, {
+                                await fetch(databaseUrl + '/bookshelf/' + bKey + '.json', {
                                     method: 'PUT',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify(book)
                                 });
                             } else {
-                                await fetch(`${databaseUrl}/bookshelf.json`, {
+                                await fetch(databaseUrl + '/bookshelf.json', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify(book)
@@ -965,6 +966,79 @@
             }
         };
         reader.readAsText(file);
+    }
+
+    // 📄 匯出 PDF 報告功能
+    function exportToPDFReport() {
+        let printWindow = window.open('', '_blank');
+        let htmlContent = `
+            <!DOCTYPE html>
+            <html lang="zh-TW">
+            <head>
+                <meta charset="UTF-8">
+                <title>神國拼圖記錄報告</title>
+                <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 30px; color: #333; line-height: 1.6; }
+                    h1 { text-align: center; color: #2c3e50; border-bottom: 2px solid #4a90e2; padding-bottom: 10px; }
+                    h2 { color: #4a90e2; margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+                    .report-card { background: #f9f9f9; border: 1px solid #e1e8ed; padding: 15px; border-radius: 6px; margin-bottom: 15px; page-break-inside: avoid; }
+                    .meta { font-size: 13px; color: #666; margin-bottom: 5px; }
+                    .title { font-size: 16px; font-weight: bold; color: #0066cc; margin-bottom: 8px; }
+                    .content { white-space: pre-wrap; font-size: 14px; }
+                </style>
+            </head>
+            <body>
+                <h1>☁️ 神國拼圖屬靈紀錄與代禱報告</h1>
+                <p style="text-align: center; color: #666; font-size: 13px;">匯出日期：${new Date().toLocaleDateString()}</p>
+                
+                <h2>一、異象、異夢與啟示記錄</h2>
+        `;
+
+        const revs = originalData.filter(i => i.type !== '代禱');
+        if (revs.length === 0) {
+            htmlContent += `<p style="color: #888;">目前沒有異象或啟示記錄。</p>`;
+        } else {
+            revs.forEach(r => {
+                htmlContent += `
+                    <div class="report-card">
+                        <div class="meta">📅 日期：${r.occurredAt || '未知'} | 類型：${r.type || '未分類'} | 狀態：${r.status || '未設定'}${r.recipient ? ' | 領受者: ' + r.recipient : ''}</div>
+                        <div class="title">${r.title || '無標題'}</div>
+                        ${r.scriptureRef ? '<div class="meta">📖 經文參考：' + r.scriptureRef + '</div>' : ''}
+                        ${r.interpretation ? '<div class="meta">💡 領受與解讀：' + r.interpretation + '</div>' : ''}
+                        <div class="content">${r.content || ''}</div>
+                    </div>
+                `;
+            });
+        }
+
+        htmlContent += `<h2>二、代禱清單</h2>`;
+        const prays = originalData.filter(i => i.type === '代禱');
+        if (prays.length === 0) {
+            htmlContent += `<p style="color: #888;">目前沒有代禱項目。</p>`;
+        } else {
+            prays.forEach(p => {
+                htmlContent += `
+                    <div class="report-card">
+                        <div class="meta">📅 日期時間：${p.occurredAt || '未知'} | 代禱項目：${p.prayerItem || '未分類'}</div>
+                        <div class="title">📌 主題：${p.title || '無主題'}</div>
+                        ${p.scriptureRef ? '<div class="meta">📖 經文參考：' + p.scriptureRef + '</div>' : ''}
+                        <div class="content">${p.content || ''}</div>
+                    </div>
+                `;
+            });
+        }
+
+        htmlContent += `
+            </body>
+            </html>
+        `;
+
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
     }
 
     function openScriptureSearchModal(contentId, scriptureId) {
@@ -1367,7 +1441,7 @@
             const key = item.firebaseKey;
 
             html += '<div class="timeline-item">';
-            html += '<div class="card-header"><span>📅 ' + dateStr + recipientText + '</span><span>🏷️ ' + typeStatus + '</span></div>';
+            html += '<div class="card-header"><span>📅 ' + dateStr + recipientText + '</span><span>🏷️️ ' + typeStatus + '</span></div>';
             html += '<h3 class="card-title" onclick="viewDetail(\'' + key + '\')">' + title + '</h3>';
             html += '<div class="card-content">' + previewContent + '</div>';
             html += '<div style="text-align: right;"><button class="btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="viewDetail(\'' + key + '\')">完整檢視</button></div>';
@@ -1865,7 +1939,7 @@
             });
 
             if (response.ok) {
-                alert("電子書儲存成功！");
+                alert("電子書儲存資料成功！");
                 closeBookFormModal();
                 fetchDreams();
             } else {
